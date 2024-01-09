@@ -95,14 +95,14 @@ namespace Tesselation
             foreach (var shape in placedshapes)
             {
                 List<Point> points = new List<Point>();
-                foreach (var tile in shape.tiles) 
+                foreach (var tile in shape.tiles)
                 {
                     bool tileright = false;
                     bool tileleft = false;
                     bool tileup = false;
                     bool tiledown = false;
 
-                    if (shape.tiles.Any(t=>t.x  == tile.x && t.y == tile.y-1))
+                    if (shape.tiles.Any(t => t.x == tile.x && t.y == tile.y - 1))
                     {
                         //Tile above, dont shrink
                         tileup = true;
@@ -126,7 +126,7 @@ namespace Tesselation
                     if (!tileleft)
                     {
                         points.Add(new Point(tile.x, tile.y));
-                        points.Add(new Point(tile.x, tile.y+1));
+                        points.Add(new Point(tile.x, tile.y + 1));
                     }
                     if (!tileright)
                     {
@@ -144,10 +144,16 @@ namespace Tesselation
                         points.Add(new Point(tile.x + 1, tile.y + 1));
                     }
 
-                    e.Graphics.FillRectangle(new Pen(Color.DarkGreen).Brush, (shape.placedposition.X + tile.x) * squaresize + leftoffset, (shape.placedposition.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
+                    Color drawcolor = Color.DarkGreen;
+                    if (deletingshape == shape.placedposition)
+                    {
+                        drawcolor = Color.Red;
+                    }
+
+                    e.Graphics.FillRectangle(new Pen(drawcolor).Brush, (shape.placedposition.X + tile.x) * squaresize + leftoffset, (shape.placedposition.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
                 }
                 points = points.Distinct().ToList();
-                points = OrderPoints(points);
+                points = OrderPoints(points, shape.tiles);
                 for (int i = 0; i < points.Count(); ++i)
                 {
                     int newx = (points[i].X + shape.placedposition.X) * squaresize + leftoffset;
@@ -159,18 +165,18 @@ namespace Tesselation
             }
         }
 
-        private List<Point> OrderPoints(List<Point> points)
+        private List<Point> OrderPoints(List<Point> points, List<Tile> tiles)
         {
             List<Point> result = new List<Point>();
-            Point last = points.OrderByDescending(p=>p.Y).OrderByDescending(p=>p.X).FirstOrDefault();
+            Point last = points.OrderByDescending(p => p.Y).OrderByDescending(p => p.X).FirstOrDefault();
             result.Add(last);
             points.Remove(last);
 
-            while (true) 
+            while (true)
             {
-                Point up    = new Point(-1, -1);
-                Point down  = new Point(-1, -1);
-                Point left  = new Point(-1, -1);
+                Point up = new Point(-1, -1);
+                Point down = new Point(-1, -1);
+                Point left = new Point(-1, -1);
                 Point right = new Point(-1, -1);
 
                 foreach (var p in points)
@@ -183,29 +189,34 @@ namespace Tesselation
                     {
                         down = p;
                     }
-                    if (p.X == last.X+1 && p.Y == last.Y)
+                    if (p.X == last.X + 1 && p.Y == last.Y)
                     {
                         right = p;
                     }
-                    if (p.X == last.X-1 && p.Y == last.Y)
+                    if (p.X == last.X - 1 && p.Y == last.Y)
                     {
                         left = p;
                     }
                 }
 
-                if (up.X != -1)
+                if (up.X != -1 && tiles.Count(t => (t.x == up.X || t.x == up.X-1) && t.y == up.Y)==1)
+                    //There must be A tile up left or up right
                 {
                     last = up;
                 }
-                else if (left.X != -1)
+                else if (left.X != -1 && tiles.Count(t => (t.y == left.Y || t.y == left.Y - 1) && t.x == left.X)==1)
+                    //There must be A tile up left of down left
                 {
                     last = left;
                 }
-                else if (down.X != -1)
+
+                else if (down.X != -1 && tiles.Count(t => (t.x == down.X || t.x == down.X - 1) && t.y == down.Y - 1)==1)
+                    //There must be A tile down left or down right
                 {
                     last = down;
                 }
-                else if (right.X != -1)
+                else if (right.X != -1 && tiles.Count(t => (t.y == right.Y || t.y == right.Y - 1) && t.x == right.X - 1)==1)
+                    //There must be A tile up right of down right
                 {
                     last = right;
                 }
@@ -236,14 +247,28 @@ namespace Tesselation
             canvas.Invalidate(true);
         }
         Point placingtile = new Point(-1, -1);
+        Point deletingshape;
         private void canvas_MouseMove(object sender, MouseEventArgs e)
         {
             if (!(placingshape is null))
             {
-                int tilex = (canvas.PointToClient(Cursor.Position).X - 20) / squaresize;
-                int tiley = (canvas.PointToClient(Cursor.Position).Y - 20) / squaresize;
+                int tilex = (canvas.PointToClient(Cursor.Position).X - leftoffset) / squaresize;
+                int tiley = (canvas.PointToClient(Cursor.Position).Y - topoffset) / squaresize;
                 placingtile = new Point(tilex, tiley);
                 canvas.Invalidate();
+            }
+            if (deleting)
+            {
+                int localx = (canvas.PointToClient(Cursor.Position).X - leftoffset)/squaresize;
+                int localy = (canvas.PointToClient(Cursor.Position).Y - topoffset )/squaresize;
+
+                Shape hover = placedshapes.FirstOrDefault(s => s.tiles.Any(t => t.x + s.placedposition.X == localx && t.y + s.placedposition.Y == localy));
+
+                if (!(hover is null))
+                {
+                    deletingshape = hover.placedposition;
+                    canvas.Invalidate();
+                }
             }
         }
 
@@ -260,6 +285,31 @@ namespace Tesselation
                 }
                 placedshapes.Add(placingshape.Place(placingtile));
                 canvas.Invalidate();
+            }
+            if (deleting && deletingshape.X != -1)
+            {
+                placedshapes.Remove(placedshapes.FirstOrDefault(s=>s.placedposition.X == deletingshape.X && s.placedposition.Y == deletingshape.Y));
+                canvas.Invalidate();
+            }
+        }
+
+        public bool deleting;
+        public void DeleteClick(object sender, EventArgs e)
+        {
+            placingshape = null;
+            foreach(var tileplacer in tilePlacers)
+            {
+                tileplacer.background.BackColor = Color.White;
+            }
+            deletingshape = new Point(-1,-1);
+            deleting = !deleting;
+            if (deleting)
+            {
+                pictureBox1.BackColor = Color.LightGray;
+            }
+            else
+            {
+                pictureBox1.BackColor = Color.White;
             }
         }
     }
@@ -291,9 +341,14 @@ namespace Tesselation
             }
         }
         public void OnClick(object sender, EventArgs e)
-        {
+        {            
             if (background.BackColor == Color.White)
             {
+                if (MainForm.instance.deleting)
+                {
+                    MainForm.instance.DeleteClick(null, null);
+                }
+
                 foreach (var tile in MainForm.instance.tilePlacers)
                 {
                     tile.background.BackColor = Color.White;
