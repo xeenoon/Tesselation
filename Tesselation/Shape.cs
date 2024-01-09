@@ -31,12 +31,18 @@ namespace Tesselation
         Random r = new Random();
         public int width;
         public int height;
+        public Point placedposition = new Point(-1, -1);
 
         public Shape(int tilecount, int width, int height)
         {
             this.width = width;
             this.height = height;
             GenerateShape(tilecount);
+        }
+        public Shape(int width, int height)
+        {
+            this.width = width;
+            this.height = height;
         }
 
         public void GenerateShape(int tilecount)
@@ -97,9 +103,25 @@ namespace Tesselation
                 }
             }
         }
+
+        internal Shape Place(Point placingtile)
+        {
+            Shape duplicate = new Shape(width, height);
+            foreach (var tile in tiles)
+            {
+                duplicate.tiles.Add(new Tile(tile.x, tile.y));
+            }
+            duplicate.placedposition = placingtile;
+            return duplicate;
+        }
+
         public static bool operator ==(Shape a, Shape b)
         {
-            if (a.tiles.Count == a.tiles.Count)
+            if (a is null || b is null)
+            {
+                return false;
+            }
+            if (a.tiles.Count == b.tiles.Count)
             {
                 int duplicatetiles = 0;
                 for (int i = 0; i < a.tiles.Count; ++i)

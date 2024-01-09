@@ -45,7 +45,9 @@
             canvas.Size = new Size(607, 450);
             canvas.TabIndex = 0;
             canvas.TabStop = false;
+            canvas.Click += canvas_Click;
             canvas.Paint += CanvasPaint;
+            canvas.MouseMove += canvas_MouseMove;
             canvas.Resize += canvas_Resize;
             // 
             // splitContainer1

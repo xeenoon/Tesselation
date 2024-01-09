@@ -8,7 +8,7 @@ namespace Tesselation
         public static SplitContainer menusplit;
 
         const int topoffset = 20;
-        const int bottomoffset = 10;
+        const int bottomoffset = 20;
         const int leftoffset = 20;
         const int rightoffset = 20;
         const int heightoffset = topoffset + bottomoffset;
@@ -34,7 +34,7 @@ namespace Tesselation
                     do
                     {
                         shape = new Shape(x + 4, shapesize, shapesize);
-                    } while (tilePlacers.Select(t=>t.shape).Any(s=>s == shape));
+                    } while (tilePlacers.Select(t => t.shape).Any(s => s == shape));
 
                     int rectx = 20 + x * 160;
                     int recty = 20 + y * 160;
@@ -49,17 +49,54 @@ namespace Tesselation
         public int verticalsquares = 18;
 
         public List<TilePlacer> tilePlacers = new List<TilePlacer>();
+        public List<Shape> placedshapes = new List<Shape>();
         public Shape placingshape;
-
+        public int squaresize = 45;
+        bool cantplace = true;
         public void CanvasPaint(object sender, PaintEventArgs e)
         {
-            int squaresize = Math.Min((menusplit.Panel1.Width-(leftoffset+rightoffset)) / horizontalsquares, (Height - heightoffset) / verticalsquares);
+            squaresize = Math.Min((menusplit.Panel1.Width - (leftoffset + rightoffset)) / horizontalsquares, (Height - heightoffset) / verticalsquares);
 
             for (int x = 0; x < horizontalsquares; ++x)
             {
                 for (int y = 0; y < verticalsquares; ++y)
                 {
-                    e.Graphics.DrawRectangle(new Pen(Color.Black), x * squaresize + leftoffset, y * squaresize + topoffset, squaresize, squaresize);
+                    e.Graphics.DrawRectangle(new Pen(Color.Black, 2), x * squaresize + leftoffset, y * squaresize + topoffset, squaresize, squaresize);
+                }
+            }
+
+            if (placingtile.X != -1 && !(placingshape is null))
+            {
+                Color previewcolor = Color.LightGreen;
+                if (placingshape.tiles.Any(t => t.x + placingtile.X >= horizontalsquares || t.y + placingtile.Y >= verticalsquares))
+                {
+                    previewcolor = Color.Red;
+                }
+                foreach (var shape in placedshapes)
+                {
+                    if (shape.tiles.Any(t2 => placingshape.tiles.Any(
+                        t => t2.x + shape.placedposition.X == t.x + placingtile.X &&
+                        t2.y + shape.placedposition.Y == t.y + placingtile.Y)))
+                    {
+                        previewcolor = Color.Red;
+                        break;
+                    }
+                }
+                cantplace = previewcolor == Color.Red;
+                foreach (var tile in placingshape.tiles)
+                {
+                    if (tile.x + placingtile.X >= horizontalsquares || tile.y + placingtile.Y >= verticalsquares)
+                    {
+                        continue;
+                    }
+                    e.Graphics.FillRectangle(new Pen(previewcolor).Brush, (placingtile.X + tile.x) * squaresize + leftoffset, (placingtile.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
+                }
+            }
+            foreach (var shape in placedshapes)
+            {
+                foreach (var tile in shape.tiles) 
+                {
+                    e.Graphics.FillRectangle(new Pen(Color.DarkGreen).Brush, (shape.placedposition.X + tile.x) * squaresize + leftoffset + 1, (shape.placedposition.Y + tile.y) * squaresize + topoffset + 1, squaresize-2, squaresize-2);
                 }
             }
         }
@@ -77,6 +114,33 @@ namespace Tesselation
         private void canvas_Resize(object sender, EventArgs e)
         {
             canvas.Invalidate(true);
+        }
+        Point placingtile = new Point(-1, -1);
+        private void canvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!(placingshape is null))
+            {
+                int tilex = (canvas.PointToClient(Cursor.Position).X - 20) / squaresize;
+                int tiley = (canvas.PointToClient(Cursor.Position).Y - 20) / squaresize;
+                placingtile = new Point(tilex, tiley);
+                canvas.Invalidate();
+            }
+        }
+
+        private void canvas_Click(object sender, EventArgs e)
+        {
+            if (!(placingshape is null) && placingtile.X != -1 && !cantplace)
+            {
+                foreach (var tile in placingshape.tiles)
+                {
+                    if (tile.x + placingtile.X >= horizontalsquares || tile.y + placingtile.Y >= verticalsquares)
+                    {
+                        return;
+                    }
+                }
+                placedshapes.Add(placingshape.Place(placingtile));
+                canvas.Invalidate();
+            }
         }
     }
     public class TilePlacer
@@ -110,6 +174,11 @@ namespace Tesselation
         {
             if (background.BackColor == Color.White)
             {
+                foreach (var tile in MainForm.instance.tilePlacers)
+                {
+                    tile.background.BackColor = Color.White;
+                }
+
                 background.BackColor = Color.LightGreen;
                 MainForm.instance.placingshape = shape;
             }
