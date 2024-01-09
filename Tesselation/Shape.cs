@@ -48,7 +48,7 @@ namespace Tesselation
         public void GenerateShape(int tilecount)
         {
             //Place a random tile
-            tiles.Add(new Tile(r.Next(0,width), r.Next(0,height)));
+            tiles.Add(new Tile(r.Next(0, width), r.Next(0, height)));
             for (int i = 1; i < tilecount; ++i)
             {
                 Tile starttile;
@@ -59,7 +59,7 @@ namespace Tesselation
                 {
                     ++tries;
                     starttile = tiles[r.Next(0, tiles.Count())];
-                    if (starttile.x >= 1 && !tiles.Any(t=>t.x == starttile.x-1 && t.y == starttile.y))
+                    if (starttile.x >= 1 && !tiles.Any(t => t.x == starttile.x - 1 && t.y == starttile.y))
                     {
                         potentialdirections |= Direction.Left;
                     }
@@ -84,7 +84,7 @@ namespace Tesselation
                     .Where(c => (potentialdirections & c) == c && c != Direction.None)    // or use HasFlag in .NET4
                     .ToArray();
 
-                Direction nextsquare = directionarray[r.Next(0,directionarray.Count())];
+                Direction nextsquare = directionarray[r.Next(0, directionarray.Count())];
                 switch (nextsquare)
                 {
                     case Direction.Up:
@@ -101,6 +101,16 @@ namespace Tesselation
                         break;
 
                 }
+            }
+
+            //move to top left corner
+            int lowestx = tiles.OrderBy(t => t.x).First().x;
+            int lowesty = tiles.OrderBy(t => t.y).First().y;
+
+            for (int i = 0; i < tiles.Count; ++i)
+            {
+                tiles[i].x -= lowestx;
+                tiles[i].y -= lowesty;
             }
         }
 

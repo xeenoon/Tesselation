@@ -96,7 +96,38 @@ namespace Tesselation
             {
                 foreach (var tile in shape.tiles) 
                 {
-                    e.Graphics.FillRectangle(new Pen(Color.DarkGreen).Brush, (shape.placedposition.X + tile.x) * squaresize + leftoffset + 1, (shape.placedposition.Y + tile.y) * squaresize + topoffset + 1, squaresize-2, squaresize-2);
+                    bool tileright = false;
+                    bool tileleft = false;
+                    bool tileup = false;
+                    bool tiledown = false;
+
+                    if (shape.tiles.Any(t=>t.x  == tile.x && t.y == tile.y-1))
+                    {
+                        //Tile above, dont shrink
+                        tileup = true;
+                    }
+                    if (shape.tiles.Any(t => t.x == tile.x && t.y == tile.y + 1))
+                    {
+                        //Tile below, dont shrink
+                        tiledown = true;
+                    }
+                    if (shape.tiles.Any(t => t.x == tile.x - 1 && t.y == tile.y))
+                    {
+                        //Tile left, dont shrink
+                        tileleft = true;
+                    }
+                    if (shape.tiles.Any(t => t.x == tile.x + 1 && t.y == tile.y))
+                    {
+                        //Tile right, dont shrink
+                        tileright = true;
+                    }
+
+                    int leftadd       = tileleft  ? 0 : 1;
+                    int rightsubtract = tileright ? 0 : 1;
+                    int topadd = tileup ? 0 : 1;
+                    int downsubtract = tiledown ? 0 : 1;
+
+                    e.Graphics.FillRectangle(new Pen(Color.DarkGreen).Brush, (shape.placedposition.X + tile.x) * squaresize + leftoffset + leftadd, (shape.placedposition.Y + tile.y) * squaresize + topoffset + topadd, squaresize-rightsubtract, squaresize-downsubtract);
                 }
             }
         }
