@@ -39,7 +39,7 @@ namespace Tesselation
             GenerateShape(tilecount);
         }
 
-        public void GenerateShape(int tilecount = 4)
+        public void GenerateShape(int tilecount)
         {
             //Place a random tile
             tiles.Add(new Tile(r.Next(0,width), r.Next(0,height)));
@@ -96,6 +96,29 @@ namespace Tesselation
 
                 }
             }
+        }
+        public static bool operator ==(Shape a, Shape b)
+        {
+            if (a.tiles.Count == a.tiles.Count)
+            {
+                int duplicatetiles = 0;
+                for (int i = 0; i < a.tiles.Count; ++i)
+                {
+                    if (b.tiles.Any(t=>t.x == a.tiles[i].x && t.y == a.tiles[i].y))
+                    {
+                        ++duplicatetiles;
+                    }
+                }
+                if (duplicatetiles == a.tiles.Count)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public static bool operator !=(Shape a, Shape b)
+        {
+            return !(a == b);
         }
     }
 }

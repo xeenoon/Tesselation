@@ -5,10 +5,12 @@ namespace Tesselation
     public partial class MainForm : Form
     {
         public static MainForm instance;
+        public static SplitContainer menusplit;
 
         const int topoffset = 20;
-        const int rightoffset = 400;
         const int bottomoffset = 10;
+        const int leftoffset = 20;
+        const int rightoffset = 20;
         const int heightoffset = topoffset + bottomoffset;
 
         public MainForm()
@@ -18,18 +20,27 @@ namespace Tesselation
             this.WindowState = FormWindowState.Maximized;
 
             InitializeComponent();
+            menusplit = splitContainer1;
 
             canvas.Refresh();
 
-            for (int i = 0; i < 4; ++i)
+            for (int y = 0; y < 6; ++y)
             {
-                const int shapesize = 4;
+                for (int x = 0; x < 2; ++x)
+                {
+                    int shapesize = 3;
 
-                Shape shape = new Shape(7, shapesize, shapesize);
-                int rectx = Screen.PrimaryScreen.WorkingArea.Width -rightoffset + 20;
-                int recty = 50 + i * 225;
+                    Shape shape;
+                    do
+                    {
+                        shape = new Shape(x + 4, shapesize, shapesize);
+                    } while (tilePlacers.Select(t=>t.shape).Any(s=>s == shape));
 
-                tilePlacers.Add(new TilePlacer(shape, new Rectangle(rectx, recty, 200, 200)));
+                    int rectx = 20 + x * 160;
+                    int recty = 20 + y * 160;
+
+                    tilePlacers.Add(new TilePlacer(shape, new Rectangle(rectx, recty, 150, 150)));
+                }
             }
 
         }
@@ -42,24 +53,30 @@ namespace Tesselation
 
         public void CanvasPaint(object sender, PaintEventArgs e)
         {
-            //Draw side panel, size of at least 200 pixels
-            e.Graphics.FillRectangle(new Pen(Color.LightGray).Brush, Width- rightoffset, 0, rightoffset, Height);
-
-            //Generate some shapes to put in the menu
-            foreach (var tileplacer in tilePlacers)
-            {
-                tileplacer.Draw(e.Graphics);
-            }
-
-            int squaresize = Math.Min((Width- rightoffset) / horizontalsquares, (Height- heightoffset) /verticalsquares);
+            int squaresize = Math.Min((menusplit.Panel1.Width-(leftoffset+rightoffset)) / horizontalsquares, (Height - heightoffset) / verticalsquares);
 
             for (int x = 0; x < horizontalsquares; ++x)
             {
                 for (int y = 0; y < verticalsquares; ++y)
                 {
-                    e.Graphics.DrawRectangle(new Pen(Color.Black) ,x * squaresize + topoffset, y * squaresize + topoffset, squaresize, squaresize);
+                    e.Graphics.DrawRectangle(new Pen(Color.Black), x * squaresize + leftoffset, y * squaresize + topoffset, squaresize, squaresize);
                 }
             }
+        }
+
+        private void splitContainer1_Panel2_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void MainForm_Resize(object sender, EventArgs e)
+        {
+            canvas.Invalidate();
+        }
+
+        private void canvas_Resize(object sender, EventArgs e)
+        {
+            canvas.Invalidate(true);
         }
     }
     public class TilePlacer
@@ -73,20 +90,20 @@ namespace Tesselation
             this.shape = shape;
             this.bounds = bounds;
 
-            background = new Panel() { BackColor = Color.DarkBlue, Location = bounds.Location, Width = bounds.Width, Height = bounds.Height };
-            MainForm.instance.Controls.Add(background);
+            background = new Panel() { BackColor = Color.White, Location = bounds.Location, Width = bounds.Width, Height = bounds.Height };
+            MainForm.menusplit.Panel2.Controls.Add(background);
             background.Click += OnClick;
+            background.Paint += Draw;
+            background.Invalidate();
         }
 
-        public void Draw(Graphics graphics)
+        public void Draw(object sender, PaintEventArgs e)
         {
-            //graphics.DrawRectangle(new Pen(Color.White), bounds.X, bounds.Y, 200, 200);
-
-            int shapescreensize = (200 / shape.width);
+            float shapescreensize = ((float)bounds.Width / shape.width);
 
             foreach (var tile in shape.tiles)
             {
-                graphics.FillRectangle(new Pen(Color.Green).Brush, new Rectangle(tile.x * shapescreensize + bounds.X, tile.y * shapescreensize + bounds.Y, shapescreensize, shapescreensize));
+                e.Graphics.FillRectangle(new Pen(Color.Green).Brush, new RectangleF(tile.x * shapescreensize, tile.y * shapescreensize, shapescreensize, shapescreensize));
             }
         }
         public void OnClick(object sender, EventArgs e)
