@@ -94,6 +94,7 @@ namespace Tesselation
             }
             foreach (var shape in placedshapes)
             {
+                List<Point> points = new List<Point>();
                 foreach (var tile in shape.tiles) 
                 {
                     bool tileright = false;
@@ -122,14 +123,102 @@ namespace Tesselation
                         tileright = true;
                     }
 
-                    int leftadd       = tileleft  ? 0 : 1;
-                    int rightsubtract = tileright ? 0 : 1;
-                    int topadd = tileup ? 0 : 1;
-                    int downsubtract = tiledown ? 0 : 1;
+                    if (!tileleft)
+                    {
+                        points.Add(new Point(tile.x, tile.y));
+                        points.Add(new Point(tile.x, tile.y+1));
+                    }
+                    if (!tileright)
+                    {
+                        points.Add(new Point(tile.x + 1, tile.y));
+                        points.Add(new Point(tile.x + 1, tile.y + 1));
+                    }
+                    if (!tileup)
+                    {
+                        points.Add(new Point(tile.x, tile.y));
+                        points.Add(new Point(tile.x + 1, tile.y));
+                    }
+                    if (!tiledown)
+                    {
+                        points.Add(new Point(tile.x, tile.y + 1));
+                        points.Add(new Point(tile.x + 1, tile.y + 1));
+                    }
 
-                    e.Graphics.FillRectangle(new Pen(Color.DarkGreen).Brush, (shape.placedposition.X + tile.x) * squaresize + leftoffset + leftadd, (shape.placedposition.Y + tile.y) * squaresize + topoffset + topadd, squaresize-rightsubtract, squaresize-downsubtract);
+                    e.Graphics.FillRectangle(new Pen(Color.DarkGreen).Brush, (shape.placedposition.X + tile.x) * squaresize + leftoffset, (shape.placedposition.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
                 }
+                points = points.Distinct().ToList();
+                points = OrderPoints(points);
+                for (int i = 0; i < points.Count(); ++i)
+                {
+                    int newx = (points[i].X + shape.placedposition.X) * squaresize + leftoffset;
+                    int newy = (points[i].Y + shape.placedposition.Y) * squaresize + topoffset;
+                    points[i] = new Point(newx, newy);
+                    //e.Graphics.FillEllipse(new Pen(Color.Purple).Brush, new Rectangle(newx-4, newy-4, 8, 8));
+                }
+                e.Graphics.DrawPolygon(new Pen(Color.Black, 2), points.ToArray());
             }
+        }
+
+        private List<Point> OrderPoints(List<Point> points)
+        {
+            List<Point> result = new List<Point>();
+            Point last = points.OrderByDescending(p=>p.Y).OrderByDescending(p=>p.X).FirstOrDefault();
+            result.Add(last);
+            points.Remove(last);
+
+            while (true) 
+            {
+                Point up    = new Point(-1, -1);
+                Point down  = new Point(-1, -1);
+                Point left  = new Point(-1, -1);
+                Point right = new Point(-1, -1);
+
+                foreach (var p in points)
+                {
+                    if (p.X == last.X && p.Y == last.Y - 1)
+                    {
+                        up = p;
+                    }
+                    if (p.X == last.X && p.Y == last.Y + 1)
+                    {
+                        down = p;
+                    }
+                    if (p.X == last.X+1 && p.Y == last.Y)
+                    {
+                        right = p;
+                    }
+                    if (p.X == last.X-1 && p.Y == last.Y)
+                    {
+                        left = p;
+                    }
+                }
+
+                if (up.X != -1)
+                {
+                    last = up;
+                }
+                else if (left.X != -1)
+                {
+                    last = left;
+                }
+                else if (down.X != -1)
+                {
+                    last = down;
+                }
+                else if (right.X != -1)
+                {
+                    last = right;
+                }
+                else
+                {
+                    //Finished
+                    break;
+                }
+
+                result.Add(last);
+                points.Remove(last);
+            }
+            return result;
         }
 
         private void splitContainer1_Panel2_Paint(object sender, PaintEventArgs e)
