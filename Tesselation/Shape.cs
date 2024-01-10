@@ -29,6 +29,8 @@ namespace Tesselation
     public class Shape
     {
         public List<Tile> tiles = new List<Tile>();
+        public Color[] potentialcolors = [Color.Orange, Color.Yellow, Color.LightCoral, Color.Blue, Color.Purple, Color.Green];
+        public Color color;
         Random r = new Random();
         public int width;
         public int height;
@@ -38,6 +40,8 @@ namespace Tesselation
         {
             this.width = width;
             this.height = height;
+            Random r = new Random();
+            color = potentialcolors[r.Next(0,potentialcolors.Count())];
             GenerateShape(tilecount);
         }
         public Shape(int width, int height)
@@ -132,6 +136,7 @@ namespace Tesselation
             {
                 duplicate.tiles.Add(new Tile(tile.x, tile.y));
             }
+            duplicate.color = this.color;
             duplicate.placedposition = placingtile;
             return duplicate;
         }
@@ -172,6 +177,7 @@ namespace Tesselation
                 copy.tiles.Add(new Tile(newlocation.X, newlocation.Y));
             }
             copy.LeftCornerAdjust();
+            copy.color = this.color;
             return copy;
         }
         static Point RotatePoint(Point pointToRotate, Point centerPoint, double angleInDegrees)

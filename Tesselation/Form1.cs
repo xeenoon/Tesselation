@@ -33,7 +33,7 @@ namespace Tesselation
                     Shape shape;
                     do
                     {
-                        shape = new Shape(x+4, shapesize, shapesize);
+                        shape = new Shape(x+5, shapesize, shapesize);
                     } while (tilePlacers.Select(t => t.shape).Any(s => shape.rotations.Any(rs => rs == s)));
 
                     int rectx = 20 + x * 160;
@@ -144,7 +144,7 @@ namespace Tesselation
                         points.Add(new Point(tile.x + 1, tile.y + 1));
                     }
 
-                    Color drawcolor = Color.DarkGreen;
+                    Color drawcolor = shape.color;
                     if (deletingshape == shape.placedposition)
                     {
                         drawcolor = Color.Red;
@@ -354,7 +354,7 @@ namespace Tesselation
                     Color drawingcolor = selected ? Color.LightGreen : Color.White;
                     if (shape.tiles.Any(t=>t.x == x && t.y == y))
                     {
-                        drawingcolor = Color.Green;
+                        drawingcolor = shape.color;
                     }
                     e.Graphics.FillRectangle(new Pen(drawingcolor).Brush, new RectangleF(x * shapescreensize+1, y * shapescreensize+1, shapescreensize-2, shapescreensize-2));
 
