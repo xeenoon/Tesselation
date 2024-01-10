@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -103,6 +104,16 @@ namespace Tesselation
                 }
             }
 
+            LeftCornerAdjust();
+            for (int i = 0; i < 4; ++i)
+            {
+                rotations.Add(Rotate(i*90));
+            }
+        }
+        public List<Shape> rotations = new List<Shape>();
+
+        public void LeftCornerAdjust()
+        {
             //move to top left corner
             int lowestx = tiles.OrderBy(t => t.x).First().x;
             int lowesty = tiles.OrderBy(t => t.y).First().y;
@@ -151,6 +162,32 @@ namespace Tesselation
         public static bool operator !=(Shape a, Shape b)
         {
             return !(a == b);
+        }
+        public Shape Rotate(int degrees)
+        {
+            Shape copy = new Shape(width,height);
+            foreach (var tile in tiles)
+            {
+                Point newlocation = RotatePoint(new Point(tile.x, tile.y), new Point(width/2, height/2), degrees);
+                copy.tiles.Add(new Tile(newlocation.X, newlocation.Y));
+            }
+            copy.LeftCornerAdjust();
+            return copy;
+        }
+        static Point RotatePoint(Point pointToRotate, Point centerPoint, double angleInDegrees)
+        {
+            double angleInRadians = angleInDegrees * (Math.PI / 180);
+            double cosTheta = Math.Cos(angleInRadians);
+            double sinTheta = Math.Sin(angleInRadians);
+            return new Point
+            ((int)Math.Round(
+                    (cosTheta * (pointToRotate.X - centerPoint.X) -
+                    sinTheta * (pointToRotate.Y - centerPoint.Y) + centerPoint.X)),
+
+             (int)Math.Round(
+                    (sinTheta * (pointToRotate.X - centerPoint.X) +
+                    cosTheta * (pointToRotate.Y - centerPoint.Y) + centerPoint.Y))
+            );
         }
     }
 }

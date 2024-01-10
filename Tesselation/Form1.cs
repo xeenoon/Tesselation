@@ -33,8 +33,8 @@ namespace Tesselation
                     Shape shape;
                     do
                     {
-                        shape = new Shape(x + 4, shapesize, shapesize);
-                    } while (tilePlacers.Select(t => t.shape).Any(s => s == shape));
+                        shape = new Shape(x+4, shapesize, shapesize);
+                    } while (tilePlacers.Select(t => t.shape).Any(s => shape.rotations.Any(rs => rs == s)));
 
                     int rectx = 20 + x * 160;
                     int recty = 20 + y * 160;
@@ -45,8 +45,8 @@ namespace Tesselation
 
         }
 
-        public int horizontalsquares = 25;
-        public int verticalsquares = 18;
+        public int horizontalsquares = 21;
+        public int verticalsquares = 15;
 
         public List<TilePlacer> tilePlacers = new List<TilePlacer>();
         public List<Shape> placedshapes = new List<Shape>();
@@ -199,24 +199,24 @@ namespace Tesselation
                     }
                 }
 
-                if (up.X != -1 && tiles.Count(t => (t.x == up.X || t.x == up.X-1) && t.y == up.Y)==1)
-                    //There must be A tile up left or up right
+                if (up.X != -1 && tiles.Count(t => (t.x == up.X || t.x == up.X - 1) && t.y == up.Y) == 1)
+                //There must be A tile up left or up right
                 {
                     last = up;
                 }
-                else if (left.X != -1 && tiles.Count(t => (t.y == left.Y || t.y == left.Y - 1) && t.x == left.X)==1)
-                    //There must be A tile up left of down left
+                else if (left.X != -1 && tiles.Count(t => (t.y == left.Y || t.y == left.Y - 1) && t.x == left.X) == 1)
+                //There must be A tile up left of down left
                 {
                     last = left;
                 }
 
-                else if (down.X != -1 && tiles.Count(t => (t.x == down.X || t.x == down.X - 1) && t.y == down.Y - 1)==1)
-                    //There must be A tile down left or down right
+                else if (down.X != -1 && tiles.Count(t => (t.x == down.X || t.x == down.X - 1) && t.y == down.Y - 1) == 1)
+                //There must be A tile down left or down right
                 {
                     last = down;
                 }
-                else if (right.X != -1 && tiles.Count(t => (t.y == right.Y || t.y == right.Y - 1) && t.x == right.X - 1)==1)
-                    //There must be A tile up right of down right
+                else if (right.X != -1 && tiles.Count(t => (t.y == right.Y || t.y == right.Y - 1) && t.x == right.X - 1) == 1)
+                //There must be A tile up right of down right
                 {
                     last = right;
                 }
@@ -259,8 +259,8 @@ namespace Tesselation
             }
             if (deleting)
             {
-                int localx = (canvas.PointToClient(Cursor.Position).X - leftoffset)/squaresize;
-                int localy = (canvas.PointToClient(Cursor.Position).Y - topoffset )/squaresize;
+                int localx = (canvas.PointToClient(Cursor.Position).X - leftoffset) / squaresize;
+                int localy = (canvas.PointToClient(Cursor.Position).Y - topoffset) / squaresize;
 
                 Shape hover = placedshapes.FirstOrDefault(s => s.tiles.Any(t => t.x + s.placedposition.X == localx && t.y + s.placedposition.Y == localy));
 
@@ -288,7 +288,7 @@ namespace Tesselation
             }
             if (deleting && deletingshape.X != -1)
             {
-                placedshapes.Remove(placedshapes.FirstOrDefault(s=>s.placedposition.X == deletingshape.X && s.placedposition.Y == deletingshape.Y));
+                placedshapes.Remove(placedshapes.FirstOrDefault(s => s.placedposition.X == deletingshape.X && s.placedposition.Y == deletingshape.Y));
                 canvas.Invalidate();
             }
         }
@@ -297,11 +297,11 @@ namespace Tesselation
         public void DeleteClick(object sender, EventArgs e)
         {
             placingshape = null;
-            foreach(var tileplacer in tilePlacers)
+            foreach (var tileplacer in tilePlacers)
             {
                 tileplacer.background.BackColor = Color.White;
             }
-            deletingshape = new Point(-1,-1);
+            deletingshape = new Point(-1, -1);
             deleting = !deleting;
             if (deleting)
             {
@@ -312,12 +312,23 @@ namespace Tesselation
                 pictureBox1.BackColor = Color.White;
             }
         }
+
+        private void MainForm_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == 'r') //rotate
+            {
+                placingshape = placingshape.Rotate(90);
+                placingshape.LeftCornerAdjust();
+                canvas.Refresh();
+            }
+        }
     }
     public class TilePlacer
     {
         public Shape shape;
         public Rectangle bounds;
         public Panel background;
+        bool selected;
 
         public TilePlacer(Shape shape, Rectangle bounds)
         {
@@ -334,15 +345,25 @@ namespace Tesselation
         public void Draw(object sender, PaintEventArgs e)
         {
             float shapescreensize = ((float)bounds.Width / shape.width);
-
-            foreach (var tile in shape.tiles)
+            background.BackColor = Color.Black;
+            
+            for (int x = 0; x<shape.width;++x)
             {
-                e.Graphics.FillRectangle(new Pen(Color.Green).Brush, new RectangleF(tile.x * shapescreensize, tile.y * shapescreensize, shapescreensize, shapescreensize));
+                for (int y = 0; y < shape.width; ++y)
+                {
+                    Color drawingcolor = selected ? Color.LightGreen : Color.White;
+                    if (shape.tiles.Any(t=>t.x == x && t.y == y))
+                    {
+                        drawingcolor = Color.Green;
+                    }
+                    e.Graphics.FillRectangle(new Pen(drawingcolor).Brush, new RectangleF(x * shapescreensize+1, y * shapescreensize+1, shapescreensize-2, shapescreensize-2));
+
+                }
             }
         }
         public void OnClick(object sender, EventArgs e)
         {            
-            if (background.BackColor == Color.White)
+            if (MainForm.instance.placingshape != shape) // reverse
             {
                 if (MainForm.instance.deleting)
                 {
@@ -351,17 +372,19 @@ namespace Tesselation
 
                 foreach (var tile in MainForm.instance.tilePlacers)
                 {
-                    tile.background.BackColor = Color.White;
+                    tile.selected = false;
+                    tile.background.Invalidate();
                 }
 
-                background.BackColor = Color.LightGreen;
+                selected = true;
                 MainForm.instance.placingshape = shape;
             }
             else
             {
-                background.BackColor = Color.White;
+                selected = false;
                 MainForm.instance.placingshape = null;
             }
+            background.Invalidate();
         }
     }
 }

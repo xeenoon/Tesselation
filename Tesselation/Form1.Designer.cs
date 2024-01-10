@@ -71,6 +71,7 @@
             splitContainer1.Size = new Size(800, 450);
             splitContainer1.SplitterDistance = 607;
             splitContainer1.TabIndex = 1;
+            splitContainer1.KeyPress += MainForm_KeyPress;
             // 
             // pictureBox1
             // 
@@ -94,6 +95,7 @@
             Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Form1";
+            KeyPress += MainForm_KeyPress;
             Resize += MainForm_Resize;
             ((System.ComponentModel.ISupportInitialize)canvas).EndInit();
             splitContainer1.Panel1.ResumeLayout(false);
