@@ -1,4 +1,5 @@
 using System.Security.Policy;
+using System.Windows.Forms;
 
 namespace Tesselation
 {
@@ -65,33 +66,6 @@ namespace Tesselation
                 }
             }
 
-            if (placingtile.X != -1 && !(placingshape is null))
-            {
-                Color previewcolor = Color.LightGreen;
-                if (placingshape.tiles.Any(t => t.x + placingtile.X >= horizontalsquares || t.y + placingtile.Y >= verticalsquares))
-                {
-                    previewcolor = Color.Red;
-                }
-                foreach (var shape in placedshapes)
-                {
-                    if (shape.tiles.Any(t2 => placingshape.tiles.Any(
-                        t => t2.x + shape.placedposition.X == t.x + placingtile.X &&
-                        t2.y + shape.placedposition.Y == t.y + placingtile.Y)))
-                    {
-                        previewcolor = Color.Red;
-                        break;
-                    }
-                }
-                cantplace = previewcolor == Color.Red;
-                foreach (var tile in placingshape.tiles)
-                {
-                    if (tile.x + placingtile.X >= horizontalsquares || tile.y + placingtile.Y >= verticalsquares)
-                    {
-                        continue;
-                    }
-                    e.Graphics.FillRectangle(new Pen(previewcolor).Brush, (placingtile.X + tile.x) * squaresize + leftoffset, (placingtile.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
-                }
-            }
             foreach (var shape in placedshapes)
             {
                 List<Point> points = new List<Point>();
@@ -162,6 +136,40 @@ namespace Tesselation
                     //e.Graphics.FillEllipse(new Pen(Color.Purple).Brush, new Rectangle(newx-4, newy-4, 8, 8));
                 }
                 e.Graphics.DrawPolygon(new Pen(Color.Black, 2), points.ToArray());
+            }
+
+
+            if (placingtile.X != -1 && !(placingshape is null))
+            {
+                Color previewcolor = Color.LightGreen;
+                if (placingshape.tiles.Any(t => t.x + placingtile.X >= horizontalsquares || t.y + placingtile.Y >= verticalsquares))
+                {
+                    previewcolor = Color.Red;
+                }
+                foreach (var shape in placedshapes)
+                {
+                    if (shape.tiles.Any(t2 => placingshape.tiles.Any(
+                        t => t2.x + shape.placedposition.X == t.x + placingtile.X &&
+                        t2.y + shape.placedposition.Y == t.y + placingtile.Y //Check for overwriting
+
+                        || (shape.color == placingshape.color && ((Math.Abs(t.x+placingtile.X - (t2.x + shape.placedposition.X)) == 1 && t2.y + shape.placedposition.Y == t.y + placingtile.Y)
+                        || (Math.Abs(t.y + placingtile.Y - (t2.y + shape.placedposition.Y)) == 1 && t2.x + shape.placedposition.X == t.x + placingtile.X)))
+                    )))
+                    {
+                        previewcolor = Color.Red;
+                        break;
+                    }
+                }
+                cantplace = previewcolor == Color.Red;
+                previewcolor = Color.FromArgb(200, previewcolor.R, previewcolor.G, previewcolor.B);
+                foreach (var tile in placingshape.tiles)
+                {
+                    if (tile.x + placingtile.X >= horizontalsquares || tile.y + placingtile.Y >= verticalsquares)
+                    {
+                        continue;
+                    }
+                    e.Graphics.FillRectangle(new Pen(previewcolor).Brush, (placingtile.X + tile.x) * squaresize + leftoffset, (placingtile.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
+                }
             }
         }
 
