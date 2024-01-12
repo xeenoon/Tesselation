@@ -24,7 +24,7 @@ namespace Tesselation
             menusplit = splitContainer1;
 
             canvas.Refresh();
-
+            Random r = new Random();
             for (int y = 0; y < 6; ++y)
             {
                 for (int x = 0; x < 2; ++x)
@@ -34,7 +34,8 @@ namespace Tesselation
                     Shape shape;
                     do
                     {
-                        shape = new Shape(x+5, shapesize, shapesize);
+                        shape = new Shape(x + 4, shapesize, shapesize);
+                        shape.color = shape.potentialcolors[r.Next(0, shape.potentialcolors.Count())];
                     } while (tilePlacers.Select(t => t.shape).Any(s => shape.rotations.Any(rs => rs == s)));
 
                     int rectx = 20 + x * 160;
@@ -46,8 +47,8 @@ namespace Tesselation
 
         }
 
-        public int horizontalsquares = 21;
-        public int verticalsquares = 15;
+        public int horizontalsquares = 10;
+        public int verticalsquares = 10;
 
         public List<TilePlacer> tilePlacers = new List<TilePlacer>();
         public List<Shape> placedshapes = new List<Shape>();
@@ -152,7 +153,7 @@ namespace Tesselation
                         t => t2.x + shape.placedposition.X == t.x + placingtile.X &&
                         t2.y + shape.placedposition.Y == t.y + placingtile.Y //Check for overwriting
 
-                        || (shape.color == placingshape.color && ((Math.Abs(t.x+placingtile.X - (t2.x + shape.placedposition.X)) == 1 && t2.y + shape.placedposition.Y == t.y + placingtile.Y)
+                        || (shape.color == placingshape.color && ((Math.Abs(t.x + placingtile.X - (t2.x + shape.placedposition.X)) == 1 && t2.y + shape.placedposition.Y == t.y + placingtile.Y)
                         || (Math.Abs(t.y + placingtile.Y - (t2.y + shape.placedposition.Y)) == 1 && t2.x + shape.placedposition.X == t.x + placingtile.X)))
                     )))
                     {
@@ -323,12 +324,19 @@ namespace Tesselation
 
         private void MainForm_KeyPress(object sender, KeyPressEventArgs e)
         {
-            if (e.KeyChar == 'r') //rotate
+            if (e.KeyChar == 'r' && !(placingshape is null)) //rotate
             {
                 placingshape = placingshape.Rotate(90);
                 placingshape.LeftCornerAdjust();
                 canvas.Refresh();
             }
+        }
+
+        private void pictureBox2_Click(object sender, EventArgs e)
+        {
+            placedshapes.Clear();
+            canvas.Invalidate();
+
         }
     }
     public class TilePlacer

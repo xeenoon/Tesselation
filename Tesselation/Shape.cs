@@ -29,7 +29,9 @@ namespace Tesselation
     public class Shape
     {
         public List<Tile> tiles = new List<Tile>();
-        public Color[] potentialcolors = [Color.Orange, Color.Yellow, Color.LightCoral, Color.Blue, Color.Purple, Color.Green];
+        public Color[] potentialcolors = [Color.Orange, Color.Yellow, Color.LightCoral, 
+                                        Color.Blue, Color.Purple, Color.Green, Color.DeepPink, 
+                                        Color.RebeccaPurple, Color.YellowGreen, Color.Wheat, Color.Gray, Color.Gold, Color.OrangeRed];
         public Color color;
         Random r = new Random();
         public int width;
@@ -40,8 +42,6 @@ namespace Tesselation
         {
             this.width = width;
             this.height = height;
-            Random r = new Random();
-            color = potentialcolors[r.Next(0,potentialcolors.Count())];
             GenerateShape(tilecount);
         }
         public Shape(int width, int height)
@@ -53,7 +53,7 @@ namespace Tesselation
         public void GenerateShape(int tilecount)
         {
             //Place a random tile
-            tiles.Add(new Tile(r.Next(0, width), r.Next(0, height)));
+            tiles.Add(new Tile(0, 0));
             for (int i = 1; i < tilecount; ++i)
             {
                 Tile starttile;
