@@ -4,21 +4,18 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Tesselation;
 
 namespace Tesselation
 {
-    internal class MapFiller
-    {
-        public List<Shape> potentialplacements = new List<Shape>();
-    }
-    public class Board
+    public class MapFiller
     {
         public int width;
         public int height;
         public List<Shape> shapes = new List<Shape>();
         public int[,] board;
 
-        public Board(int width, int height, List<Shape> shapes)
+        public MapFiller(int width, int height, List<Shape> shapes)
         {
             this.width = width;
             this.height = height;
@@ -30,35 +27,87 @@ namespace Tesselation
             }
         }
 
-        public List<Board> GenerateMoves(List<Shape> potentialplacements)
+
+        public Shape Move()
         {
-            List<Board> boards = new List<Board>();
-
-
-
-            return boards;
-        }
-        public List<Tile> SmallestEmptyArea(Board board)
-        {
-            return null;
-            int[,] boardcopy = new int[width, height];
-            Array.Copy(board.board, boardcopy, width * height);
-
-            for (int x = 0; x < width; ++x)
+            var moves = FindEmptyArea(board, width, height);
+            Random r = new Random();
+            Point placedposition = new Point(0, 0);
+            do
             {
-                for (int y = 0; y < height; ++y)
+                if (moves.Count == 0)
                 {
-                    int isempty = boardcopy[x, y];
-                    if (isempty == 0)
+                    return null;
+                }
+                placedposition = moves[r.Next(0, moves.Count)];
+                moves.Remove(placedposition);
+            } while (shapes[0].tiles.Any(t => t.x + placedposition.X >= width || t.y + placedposition.Y >= height || board[t.x + placedposition.X, t.y + placedposition.Y] == 1));
+            //placed the piece
+            Shape copy = shapes[0].Place(placedposition);
+            shapes.Add(copy);
+            foreach (var tile in copy.tiles)
+            {
+                board[tile.x + placedposition.X, tile.y + placedposition.Y] = 1;
+            }
+            return copy;
+        }
+
+
+        static List<Point> FindEmptyArea(int[,] board, int width, int height)
+        {
+            List<List<Point>> emptyAreas = new List<List<Point>>();
+
+            bool[,] visited = new bool[width, height];
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    if (board[x, y] == 0 && !visited[x, y])
                     {
-                        //Search from this position in the board
+                        List<Point> emptyArea = new List<Point>();
+                        DFS(board, x, y, width, height, visited, emptyArea);
+                        emptyAreas.Add(emptyArea);
                     }
                 }
             }
+
+            // Filter out only the smallest areas
+            int minAreaSize = int.MaxValue;
+            List<Point> smallestArea = new List<Point>();
+
+            foreach (var area in emptyAreas)
+            {
+                if (area.Count < minAreaSize)
+                {
+                    smallestArea.Clear();
+                    smallestArea = area;
+                    minAreaSize = area.Count;
+                }
+                else if (area.Count == minAreaSize)
+                {
+                    smallestArea = area;
+                }
+            }
+
+            return smallestArea;
         }
-        public void SearchIsland(int x, int y)
+
+        static void DFS(int[,] board, int x, int y, int width, int height, bool[,] visited, List<Point> emptyArea)
         {
-            
+            if (x < 0 || x >= width || y < 0 || y >= height || visited[x, y] || board[x, y] != 0)
+            {
+                return;
+            }
+
+            visited[x, y] = true;
+            emptyArea.Add(new Point(x, y));
+
+            DFS(board, x + 1, y, width, height, visited, emptyArea);
+            DFS(board, x - 1, y, width, height, visited, emptyArea);
+            DFS(board, x, y + 1, width, height, visited, emptyArea);
+            DFS(board, x, y - 1, width, height, visited, emptyArea);
         }
     }
+
 }

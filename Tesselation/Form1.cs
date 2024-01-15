@@ -44,11 +44,26 @@ namespace Tesselation
                     tilePlacers.Add(new TilePlacer(shape, new Rectangle(rectx, recty, 150, 150)));
                 }
             }
+            mapFiller = new MapFiller(horizontalsquares, verticalsquares, tilePlacers.Select(t=>t.shape).ToList());
 
+            AIMoveDelay.AutoReset = true;
+            AIMoveDelay.Elapsed += AIMove;
+            AIMoveDelay.Start();
+        }
+        System.Timers.Timer AIMoveDelay = new System.Timers.Timer(100);
+        MapFiller mapFiller;
+        public void AIMove(object sender, EventArgs e)
+        {
+            Shape placement = mapFiller.Move();
+            if (!(placement is null))
+            {
+                placedshapes.Add(placement);
+            }
+            canvas.Invalidate();
         }
 
-        public int horizontalsquares = 10;
-        public int verticalsquares = 10;
+        public static int horizontalsquares = 10;
+        public static int verticalsquares = 10;
 
         public List<TilePlacer> tilePlacers = new List<TilePlacer>();
         public List<Shape> placedshapes = new List<Shape>();

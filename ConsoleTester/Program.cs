@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 
 class Program
 {
@@ -14,37 +15,33 @@ class Program
             {1, 0, 0, 1, 1},
             {1, 1, 0, 0, 1},
             {1, 1, 0, 0, 0},
-            {1, 1, 1, 1, 1}
+            {0, 0, 1, 1, 1}
         };
 
-        List<List<(int, int)>> emptyAreas = FindEmptyAreas(board, width, height);
+        List<Point> emptyArea = FindEmptyArea(board, width, height);
 
         Console.WriteLine("Empty Areas:");
 
-        for (int i = 0; i < emptyAreas.Count; i++)
+        foreach (var coordinate in emptyArea)
         {
-            Console.WriteLine($"Area {i + 1}:");
-            foreach (var coordinate in emptyAreas[i])
-            {
-                Console.WriteLine($"({coordinate.Item2}, {coordinate.Item1})");
-            }
+            Console.WriteLine($"({coordinate.X}, {coordinate.Y})");
         }
     }
 
-    static List<List<(int, int)>> FindEmptyAreas(int[,] board, int width, int height)
+    static List<Point> FindEmptyArea(int[,] board, int width, int height)
     {
-        List<List<(int, int)>> emptyAreas = new List<List<(int, int)>>();
+        List<List<Point>> emptyAreas = new List<List<Point>>();
 
         bool[,] visited = new bool[width, height];
 
-        for (int i = 0; i < width; i++)
+        for (int x = 0; x < width; x++)
         {
-            for (int j = 0; j < height; j++)
+            for (int y = 0; y < height; y++)
             {
-                if (board[i, j] == 0 && !visited[i, j])
+                if (board[x, y] == 0 && !visited[x, y])
                 {
-                    List<(int, int)> emptyArea = new List<(int, int)>();
-                    DFS(board, i, j, width, height, visited, emptyArea);
+                    List<Point> emptyArea = new List<Point>();
+                    DFS(board, x, y, width, height, visited, emptyArea);
                     emptyAreas.Add(emptyArea);
                 }
             }
@@ -52,26 +49,26 @@ class Program
 
         // Filter out only the smallest areas
         int minAreaSize = int.MaxValue;
-        List<List<(int, int)>> smallestAreas = new List<List<(int, int)>>();
+        List<Point> smallestArea = new List<Point>();
 
         foreach (var area in emptyAreas)
         {
             if (area.Count < minAreaSize)
             {
-                smallestAreas.Clear();
-                smallestAreas.Add(area);
+                smallestArea.Clear();
+                smallestArea = area;
                 minAreaSize = area.Count;
             }
             else if (area.Count == minAreaSize)
             {
-                smallestAreas.Add(area);
+                smallestArea = area;
             }
         }
 
-        return smallestAreas;
+        return smallestArea;
     }
 
-    static void DFS(int[,] board, int x, int y, int width, int height, bool[,] visited, List<(int, int)> emptyArea)
+    static void DFS(int[,] board, int x, int y, int width, int height, bool[,] visited, List<Point> emptyArea)
     {
         if (x < 0 || x >= width || y < 0 || y >= height || visited[x, y] || board[x, y] != 0)
         {
@@ -79,7 +76,7 @@ class Program
         }
 
         visited[x, y] = true;
-        emptyArea.Add((x, y));
+        emptyArea.Add(new Point(x, y));
 
         DFS(board, x + 1, y, width, height, visited, emptyArea);
         DFS(board, x - 1, y, width, height, visited, emptyArea);
