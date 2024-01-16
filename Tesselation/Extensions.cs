@@ -18,5 +18,16 @@ namespace Tesselation
             }
             return count;
         }
+        public static List<T> Shuffle<T>(this List<T> list)
+        {
+            List<T> result = new List<T>();
+            Random r = new Random();
+            int firstcount = list.Count();
+            for (int i = 0; i < firstcount; ++i)
+            {
+                result.Add(list[r.Next(0,list.Count)]);
+            }
+            return result;
+        }
     }
 }

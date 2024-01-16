@@ -35,7 +35,6 @@ namespace Tesselation
                     do
                     {
                         shape = new Shape(x + 4, shapesize, shapesize);
-                        shape.color = shape.potentialcolors[r.Next(0, shape.potentialcolors.Count())];
                     } while (tilePlacers.Select(t => t.shape).Any(s => shape.rotations.Any(rs => rs == s)));
 
                     int rectx = 20 + x * 160;
@@ -57,7 +56,14 @@ namespace Tesselation
             Shape placement = mapFiller.Move();
             if (!(placement is null))
             {
-                placedshapes.Add(placement);
+                if (placedshapes.Contains(placement))
+                {
+                    placedshapes.Remove(placement);
+                }
+                else
+                {
+                    placedshapes.Add(placement);
+                }
             }
             canvas.Invalidate();
         }
@@ -70,6 +76,7 @@ namespace Tesselation
         public Shape placingshape;
         public int squaresize = 45;
         bool cantplace = true;
+
         public void CanvasPaint(object sender, PaintEventArgs e)
         {
             squaresize = Math.Min((menusplit.Panel1.Width - (leftoffset + rightoffset)) / horizontalsquares, (Height - heightoffset) / verticalsquares);
@@ -82,7 +89,10 @@ namespace Tesselation
                 }
             }
 
-            foreach (var shape in placedshapes)
+            //Copy incase of multithread issue
+            Shape[] temp = new Shape[placedshapes.Count];
+            placedshapes.CopyTo(temp,0);
+            foreach (var shape in temp)
             {
                 List<Point> points = new List<Point>();
                 foreach (var tile in shape.tiles)

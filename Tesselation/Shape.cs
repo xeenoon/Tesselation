@@ -42,6 +42,7 @@ namespace Tesselation
         {
             this.width = width;
             this.height = height;
+            this.color = potentialcolors[r.Next(0, potentialcolors.Count())];
             GenerateShape(tilecount);
         }
         public Shape(int width, int height)
@@ -177,7 +178,7 @@ namespace Tesselation
                 copy.tiles.Add(new Tile(newlocation.X, newlocation.Y));
             }
             copy.LeftCornerAdjust();
-            copy.color = this.color;
+            copy.color = color;
             return copy;
         }
         static Point RotatePoint(Point pointToRotate, Point centerPoint, double angleInDegrees)

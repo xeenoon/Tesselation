@@ -33,23 +33,40 @@ namespace Tesselation
             var moves = FindEmptyArea(board, width, height);
             Random r = new Random();
             Point placedposition = new Point(0, 0);
-            do
+
+            List<Shape> shuffledshapes = shapes.Shuffle().SelectMany(s=>s.rotations).ToList();
+            foreach (var shape in shuffledshapes)
             {
-                if (moves.Count == 0)
+                do
                 {
-                    return null;
+                    if (moves.Count == 0)
+                    {
+                        break;
+                    }
+                    placedposition = moves[r.Next(0, moves.Count)];
+                    moves.Remove(placedposition);
+                } while (shape.tiles.Any(t => t.x + placedposition.X >= width || t.y + placedposition.Y >= height || board[t.x + placedposition.X, t.y + placedposition.Y] == 1));
+                if (moves.Count() == 0)
+                {
+                    continue;
                 }
-                placedposition = moves[r.Next(0, moves.Count)];
-                moves.Remove(placedposition);
-            } while (shapes[0].tiles.Any(t => t.x + placedposition.X >= width || t.y + placedposition.Y >= height || board[t.x + placedposition.X, t.y + placedposition.Y] == 1));
-            //placed the piece
-            Shape copy = shapes[0].Place(placedposition);
-            shapes.Add(copy);
-            foreach (var tile in copy.tiles)
-            {
-                board[tile.x + placedposition.X, tile.y + placedposition.Y] = 1;
+                //placed the piece
+                Shape copy = shape.Place(placedposition);
+                shapes.Add(copy);
+                foreach (var tile in copy.tiles)
+                {
+                    board[tile.x + placedposition.X, tile.y + placedposition.Y] = 1;
+                }
+                return copy;
             }
-            return copy;
+            //Found no level moves? Backtrace
+            Shape toremove = shapes.Last();
+            foreach (var tile in toremove.tiles)
+            {
+                board[tile.x + toremove.placedposition.X, tile.y + toremove.placedposition.Y] = 0;
+            }
+            shapes.Remove(toremove);
+            return toremove;
         }
 
 
