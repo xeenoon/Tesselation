@@ -45,7 +45,7 @@ namespace Tesselation
             }
             mapFiller = new MapFiller(horizontalsquares, verticalsquares, tilePlacers.Select(t=>t.shape).ToList());
 
-            AIMoveDelay.AutoReset = true;
+            AIMoveDelay.AutoReset = false;
             AIMoveDelay.Elapsed += AIMove;
             AIMoveDelay.Start();
         }
@@ -53,19 +53,23 @@ namespace Tesselation
         MapFiller mapFiller;
         public void AIMove(object sender, EventArgs e)
         {
-            Shape placement = mapFiller.Move();
-            if (!(placement is null))
+            while (true) 
             {
-                if (placedshapes.Contains(placement))
+                var moves = mapFiller.GenerateMoves();
+                if (!(moves is null))
                 {
-                    placedshapes.Remove(placement);
+                    if (moves.Count == 1 && !moves[0].isplacing)
+                    {
+                        placedshapes.Remove(moves[0].shape);
+                    }
+                    else
+                    {
+                        var bestmove = moves.OrderByDescending(t => t.touchingborders).FirstOrDefault();
+                        placedshapes.Add(bestmove.shape);
+                    }
                 }
-                else
-                {
-                    placedshapes.Add(placement);
-                }
+                canvas.Invalidate();
             }
-            canvas.Invalidate();
         }
 
         public static int horizontalsquares = 10;
@@ -91,7 +95,14 @@ namespace Tesselation
 
             //Copy incase of multithread issue
             Shape[] temp = new Shape[placedshapes.Count];
-            placedshapes.CopyTo(temp,0);
+            try
+            {
+                placedshapes.CopyTo(temp, 0);
+            }
+            catch
+            {
+                return;
+            }
             foreach (var shape in temp)
             {
                 List<Point> points = new List<Point>();

@@ -29,6 +29,8 @@ namespace Tesselation
     public class Shape
     {
         public List<Tile> tiles = new List<Tile>();
+        public List<Point> touchingsquares = new List<Point>();
+
         public Color[] potentialcolors = [Color.Orange, Color.Yellow, Color.LightCoral, 
                                         Color.Blue, Color.Purple, Color.Green, Color.DeepPink, 
                                         Color.RebeccaPurple, Color.YellowGreen, Color.Wheat, Color.Gray, Color.Gold, Color.OrangeRed];
@@ -55,6 +57,9 @@ namespace Tesselation
         {
             //Place a random tile
             tiles.Add(new Tile(0, 0));
+
+            AddSideTiles(0,0);
+
             for (int i = 1; i < tilecount; ++i)
             {
                 Tile starttile;
@@ -95,15 +100,19 @@ namespace Tesselation
                 {
                     case Direction.Up:
                         tiles.Add(new Tile(starttile.x, starttile.y - 1));
+                        AddSideTiles(starttile.x, starttile.y - 1);
                         break;
                     case Direction.Right:
                         tiles.Add(new Tile(starttile.x + 1, starttile.y));
+                        AddSideTiles(starttile.x + 1, starttile.y);
                         break;
                     case Direction.Down:
                         tiles.Add(new Tile(starttile.x, starttile.y + 1));
+                        AddSideTiles(starttile.x, starttile.y + 1);
                         break;
                     case Direction.Left:
                         tiles.Add(new Tile(starttile.x - 1, starttile.y));
+                        AddSideTiles(starttile.x - 1, starttile.y);
                         break;
 
                 }
@@ -112,9 +121,20 @@ namespace Tesselation
             LeftCornerAdjust();
             for (int i = 0; i < 4; ++i)
             {
-                rotations.Add(Rotate(i*90));
+                rotations.Add(Rotate(i * 90));
             }
+            touchingsquares = touchingsquares.Distinct().ToList();
+            touchingsquares.RemoveAll(t => tiles.Any(tile => tile.x == t.X && tile.y == t.Y));
         }
+
+        private void AddSideTiles(int x, int y)
+        {
+            touchingsquares.Add(new Point(x-1, y));
+            touchingsquares.Add(new Point(x, y-1));
+            touchingsquares.Add(new Point(x+1, y));
+            touchingsquares.Add(new Point(x, y+1));
+        }
+
         public List<Shape> rotations = new List<Shape>();
 
         public void LeftCornerAdjust()

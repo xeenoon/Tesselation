@@ -28,36 +28,35 @@ namespace Tesselation
         }
 
 
-        public Shape Move()
+        public List<MoveData> GenerateMoves()
         {
+            List<MoveData> potentialmoves = new List<MoveData>();
             var moves = FindEmptyArea(board, width, height);
             Random r = new Random();
-            Point placedposition = new Point(0, 0);
 
             List<Shape> shuffledshapes = shapes.Shuffle().SelectMany(s=>s.rotations).ToList();
             foreach (var shape in shuffledshapes)
             {
-                do
+                foreach (var placedposition in moves)
                 {
-                    if (moves.Count == 0)
+                    if (!shape.tiles.Any(t => t.x + placedposition.X >= width || t.y + placedposition.Y >= height || board[t.x + placedposition.X, t.y + placedposition.Y] == 1))
                     {
-                        break;
+
+                        //place the piece
+                        Shape copy = shape.Place(placedposition);
+                        shapes.Add(copy);
+                        foreach (var tile in copy.tiles)
+                        {
+                            board[tile.x + placedposition.X, tile.y + placedposition.Y] = 1;
+                        }
+                        int touchingsquares = FindTouchingSquares(copy);
+                        potentialmoves.Add(new MoveData(copy, touchingsquares, false));
                     }
-                    placedposition = moves[r.Next(0, moves.Count)];
-                    moves.Remove(placedposition);
-                } while (shape.tiles.Any(t => t.x + placedposition.X >= width || t.y + placedposition.Y >= height || board[t.x + placedposition.X, t.y + placedposition.Y] == 1));
-                if (moves.Count() == 0)
-                {
-                    continue;
                 }
-                //placed the piece
-                Shape copy = shape.Place(placedposition);
-                shapes.Add(copy);
-                foreach (var tile in copy.tiles)
-                {
-                    board[tile.x + placedposition.X, tile.y + placedposition.Y] = 1;
-                }
-                return copy;
+            }
+            if (potentialmoves.Count >= 1)
+            {
+                return potentialmoves;
             }
             //Found no level moves? Backtrace
             Shape toremove = shapes.Last();
@@ -66,9 +65,25 @@ namespace Tesselation
                 board[tile.x + toremove.placedposition.X, tile.y + toremove.placedposition.Y] = 0;
             }
             shapes.Remove(toremove);
-            return toremove;
+            potentialmoves.Clear();
+            potentialmoves.Add(new MoveData(toremove, 0, false));
+            return potentialmoves;
         }
 
+        private int FindTouchingSquares(Shape copy)
+        {
+            int result = 0;
+            foreach (var point in copy.touchingsquares)
+            {
+                int x = point.X + copy.placedposition.X;
+                int y = point.Y + copy.placedposition.Y;
+                if (x >= width || y>=height || x < 0 || y < 0 || board[x, y] == 1)
+                {
+                    ++result;
+                }
+            }
+            return result;
+        }
 
         static List<Point> FindEmptyArea(int[,] board, int width, int height)
         {
@@ -126,5 +141,17 @@ namespace Tesselation
             DFS(board, x, y - 1, width, height, visited, emptyArea);
         }
     }
+    public class MoveData
+    {
+        public Shape shape;
+        public int touchingborders;
+        public bool isplacing;
 
+        public MoveData(Shape shape, int touchingborders, bool isplacing)
+        {
+            this.shape = shape;
+            this.touchingborders = touchingborders;
+            this.isplacing = isplacing;
+        }
+    }
 }
