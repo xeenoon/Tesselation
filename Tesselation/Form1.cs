@@ -34,7 +34,7 @@ namespace Tesselation
                     Shape shape;
                     do
                     {
-                        shape = new Shape(x + 4, shapesize, shapesize);
+                        shape = new Shape(x+4, shapesize, shapesize);
                     } while (tilePlacers.Select(t => t.shape).Any(s => shape.rotations.Any(rs => rs == s)));
 
                     int rectx = 20 + x * 160;
@@ -49,31 +49,60 @@ namespace Tesselation
             AIMoveDelay.Elapsed += AIMove;
             AIMoveDelay.Start();
         }
-        System.Timers.Timer AIMoveDelay = new System.Timers.Timer(100);
+        System.Timers.Timer AIMoveDelay = new System.Timers.Timer(1000);
         MapFiller mapFiller;
+        bool paintfinished = false;
         public void AIMove(object sender, EventArgs e)
         {
+            int iterations = 0;
             while (true) 
             {
+                ++iterations;
                 var moves = mapFiller.GenerateMoves();
                 if (!(moves is null))
                 {
                     if (moves.Count == 1 && !moves[0].isplacing)
                     {
                         placedshapes.Remove(moves[0].shape);
+
+                        foreach (var tile in moves[0].shape.tiles)
+                        {
+                            mapFiller.board[tile.x + moves[0].shape.placedposition.X + (tile.y + moves[0].shape.placedposition.Y)*mapFiller.width] = 0;
+                        }
+                        mapFiller.shapes.Remove(moves[0].shape);
                     }
                     else
                     {
                         var bestmove = moves.OrderByDescending(t => t.touchingborders).FirstOrDefault();
                         placedshapes.Add(bestmove.shape);
+
+
+                        foreach (var tile in bestmove.shape.tiles)
+                        {
+                            mapFiller.board[tile.x + bestmove.shape.placedposition.X + (tile.y + bestmove.shape.placedposition.Y) * mapFiller.width] = 1;
+                        }
+                        mapFiller.shapes.Add(bestmove.shape);
                     }
                 }
-                canvas.Invalidate();
+                paintfinished = false;
+                if (iterations % 1000 == 0)
+                {
+                    canvas.Invalidate();
+
+                    while (!paintfinished)
+                    {
+                        //wait for paint to finish
+                    }
+                }
+                if (mapFiller.board.All(i=>i==1))
+                {
+                    return; //issolved
+                }
             }
         }
 
-        public static int horizontalsquares = 10;
-        public static int verticalsquares = 10;
+        public static int horizontalsquares = 21;
+        public static int verticalsquares = 15;
 
         public List<TilePlacer> tilePlacers = new List<TilePlacer>();
         public List<Shape> placedshapes = new List<Shape>();
@@ -94,16 +123,7 @@ namespace Tesselation
             }
 
             //Copy incase of multithread issue
-            Shape[] temp = new Shape[placedshapes.Count];
-            try
-            {
-                placedshapes.CopyTo(temp, 0);
-            }
-            catch
-            {
-                return;
-            }
-            foreach (var shape in temp)
+            foreach (var shape in placedshapes)
             {
                 List<Point> points = new List<Point>();
                 foreach (var tile in shape.tiles)
@@ -208,6 +228,8 @@ namespace Tesselation
                     e.Graphics.FillRectangle(new Pen(previewcolor).Brush, (placingtile.X + tile.x) * squaresize + leftoffset, (placingtile.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
                 }
             }
+
+            paintfinished = true;
         }
 
         private List<Point> OrderPoints(List<Point> points, List<Tile> tiles)
