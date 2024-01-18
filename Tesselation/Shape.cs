@@ -194,10 +194,18 @@ namespace Tesselation
             Shape copy = new Shape(width,height);
             foreach (var tile in tiles)
             {
-                Point newlocation = RotatePoint(new Point(tile.x, tile.y), new Point(width/2, height/2), degrees);
+                Point newlocation = RotatePoint(new Point(tile.x, tile.y), new Point((width-1)/2, (height-1)/2), degrees);
                 copy.tiles.Add(new Tile(newlocation.X, newlocation.Y));
             }
             copy.LeftCornerAdjust();
+            foreach (var tile in copy.tiles)
+            {
+                copy.AddSideTiles(tile.x, tile.y);
+            }
+
+            copy.touchingsquares = copy.touchingsquares.Distinct().ToList();
+            copy.touchingsquares.RemoveAll(t => copy.tiles.Any(tile => tile.x == t.X && tile.y == t.Y));
+
             copy.color = color;
             return copy;
         }

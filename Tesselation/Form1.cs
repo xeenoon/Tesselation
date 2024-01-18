@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Policy;
 using System.Windows.Forms;
 
@@ -55,6 +56,8 @@ namespace Tesselation
         public void AIMove(object sender, EventArgs e)
         {
             int iterations = 0;
+            Stopwatch s = new Stopwatch();
+            s.Start();
             while (true) 
             {
                 ++iterations;
@@ -69,11 +72,13 @@ namespace Tesselation
                         {
                             mapFiller.board[tile.x + moves[0].shape.placedposition.X + (tile.y + moves[0].shape.placedposition.Y)*mapFiller.width] = 0;
                         }
-                        mapFiller.shapes.Remove(moves[0].shape);
+                        mapFiller.placedshapes.Remove(moves[0].shape);
                     }
                     else
                     {
                         var bestmove = moves.OrderByDescending(t => t.touchingborders).FirstOrDefault();
+                        int squares = bestmove.touchingborders;
+                        bestmove = moves.Where(m=>m.touchingborders >= squares).ToList().Shuffle().FirstOrDefault();
                         placedshapes.Add(bestmove.shape);
 
 
@@ -81,12 +86,15 @@ namespace Tesselation
                         {
                             mapFiller.board[tile.x + bestmove.shape.placedposition.X + (tile.y + bestmove.shape.placedposition.Y) * mapFiller.width] = 1;
                         }
-                        mapFiller.shapes.Add(bestmove.shape);
+                        mapFiller.placedshapes.Add(bestmove.shape);
                     }
                 }
                 paintfinished = false;
-                if (iterations % 1000 == 0)
+                if (iterations % 100 == 0)
                 {
+                    s.Stop();
+                    UpdateAILabel((int)s.ElapsedMilliseconds, 100);
+                    s.Restart();
                     canvas.Invalidate();
 
                     while (!paintfinished)
@@ -94,10 +102,23 @@ namespace Tesselation
                         //wait for paint to finish
                     }
                 }
+                //Thread.Sleep(100);
                 if (mapFiller.board.All(i=>i==1))
                 {
+                    canvas.Invalidate();
                     return; //issolved
                 }
+            }
+        }
+        private void UpdateAILabel(int milliseconds, int moves)
+        {
+            if (label1.InvokeRequired)
+            {
+                label1.BeginInvoke(new Action(() => UpdateAILabel(milliseconds, moves)));
+            }
+            else
+            {
+                label1.Text = (milliseconds / ((float)moves)).ToString() + " miliseconds per move";
             }
         }
 
@@ -394,7 +415,7 @@ namespace Tesselation
         {
             placedshapes.Clear();
             canvas.Invalidate();
-
+            AIMoveDelay.Start();
         }
     }
     public class TilePlacer

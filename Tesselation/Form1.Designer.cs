@@ -31,6 +31,7 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             canvas = new PictureBox();
             splitContainer1 = new SplitContainer();
+            label1 = new Label();
             pictureBox2 = new PictureBox();
             pictureBox1 = new PictureBox();
             ((System.ComponentModel.ISupportInitialize)canvas).BeginInit();
@@ -68,6 +69,7 @@
             // 
             // splitContainer1.Panel2
             // 
+            splitContainer1.Panel2.Controls.Add(label1);
             splitContainer1.Panel2.Controls.Add(pictureBox2);
             splitContainer1.Panel2.Controls.Add(pictureBox1);
             splitContainer1.Panel2.Paint += splitContainer1_Panel2_Paint;
@@ -75,6 +77,16 @@
             splitContainer1.SplitterDistance = 607;
             splitContainer1.TabIndex = 1;
             splitContainer1.KeyPress += MainForm_KeyPress;
+            // 
+            // label1
+            // 
+            label1.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            label1.AutoSize = true;
+            label1.Location = new Point(11, 424);
+            label1.Name = "label1";
+            label1.Size = new Size(103, 15);
+            label1.TabIndex = 2;
+            label1.Text = "AI-MoveTimeData";
             // 
             // pictureBox2
             // 
@@ -116,6 +128,7 @@
             ((System.ComponentModel.ISupportInitialize)canvas).EndInit();
             splitContainer1.Panel1.ResumeLayout(false);
             splitContainer1.Panel2.ResumeLayout(false);
+            splitContainer1.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
             splitContainer1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)pictureBox2).EndInit();
@@ -129,5 +142,6 @@
         public SplitContainer splitContainer1;
         private PictureBox pictureBox1;
         private PictureBox pictureBox2;
+        private Label label1;
     }
 }
