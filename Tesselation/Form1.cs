@@ -90,10 +90,11 @@ namespace Tesselation
                     }
                 }
                 paintfinished = false;
-                if (iterations % 100 == 0)
+                const int moves_per_render = 1;
+                if (iterations % moves_per_render == 0)
                 {
                     s.Stop();
-                    UpdateAILabel((int)s.ElapsedMilliseconds, 100);
+                    UpdateAILabel((int)s.ElapsedMilliseconds, moves_per_render);
                     s.Restart();
                     canvas.Invalidate();
 

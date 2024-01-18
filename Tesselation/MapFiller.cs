@@ -32,47 +32,74 @@ namespace Tesselation
         }
 
 
+        static bool CanSumToTarget(int[] numbers, int targetSum)
+        {
+            bool[] dp = new bool[targetSum + 1];
+            dp[0] = true;
+
+            for (int i = 1; i <= targetSum; i++)
+            {
+                for (int j = 0; j < numbers.Length; j++)
+                {
+                    if (i - numbers[j] >= 0 && dp[i - numbers[j]])
+                    {
+                        dp[i] = true;
+                        break;
+                    }
+                }
+            }
+
+            return dp[targetSum];
+        }
+
+
         public List<MoveData> GenerateMoves()
         {
             var precalcmoves = visitedboards.FirstOrDefault(bm => bm.board.SequenceEqual(board));
             if (!(precalcmoves is null))
             {
-           //     return precalcmoves.moves;
+                return precalcmoves.moves;
             }
 
             List<MoveData> potentialmoves = new List<MoveData>();
             var moves = FindEmptyArea(board, width, height);
             Random r = new Random();
-
-            List<Shape> shaperotations = potentialshapes.SelectMany(s=>s.rotations).ToList();
             int[] boardcopy = new int[width * height];
 
-            foreach (var shape in shaperotations)
+            if (moves.Count > 50 || CanSumToTarget(potentialshapes.Select(s => s.tiles.Count).Distinct().ToArray(), moves.Count))
             {
-                foreach (var placedposition in moves)
+                //check if a possible combination could theoretically exist
+
+
+                List<Shape> shaperotations = potentialshapes.SelectMany(s => s.rotations).ToList();
+
+                foreach (var shape in shaperotations)
                 {
-                    if (!shape.tiles.Any(t => t.x + placedposition.X >= width || t.y + placedposition.Y >= height || board[t.x + placedposition.X + (t.y + placedposition.Y)*width] == 1))
+                    foreach (var placedposition in moves)
                     {
-                        //place the piece
-                        Shape copy = shape.Place(placedposition);
-                        board.CopyTo(boardcopy, 0);
-                        foreach (var tile in shape.tiles)
+                        if (!shape.tiles.Any(t => t.x + placedposition.X >= width || t.y + placedposition.Y >= height || board[t.x + placedposition.X + (t.y + placedposition.Y) * width] == 1))
                         {
-                            boardcopy[tile.x + placedposition.X + (tile.y + placedposition.Y)*width] = 1;
-                        }
-                        if (!blacklistedboards.Any(b=> boardcopy.SequenceEqual(b)))
-                        {
-                            int touchingsquares = FindTouchingSquares(shape, placedposition);
-                            potentialmoves.Add(new MoveData(copy, touchingsquares, true));
+                            //place the piece
+                            Shape copy = shape.Place(placedposition);
+                            board.CopyTo(boardcopy, 0);
+                            foreach (var tile in shape.tiles)
+                            {
+                                boardcopy[tile.x + placedposition.X + (tile.y + placedposition.Y) * width] = 1;
+                            }
+                            if (!blacklistedboards.Any(b => boardcopy.SequenceEqual(b)))
+                            {
+                                int touchingsquares = FindTouchingSquares(shape, placedposition);
+                                potentialmoves.Add(new MoveData(copy, touchingsquares, true));
+                            }
                         }
                     }
                 }
-            }
-            if (potentialmoves.Count >= 1)
-            {
-                board.CopyTo(boardcopy, 0);
-                visitedboards.Add(new BoardMoves(boardcopy, potentialmoves));
-                return potentialmoves;
+                if (potentialmoves.Count >= 1)
+                {
+                    board.CopyTo(boardcopy, 0);
+                    visitedboards.Add(new BoardMoves(boardcopy, potentialmoves));
+                    return potentialmoves;
+                }
             }
             //Found no level moves? Backtrace
             Shape toremove = placedshapes.Last();
