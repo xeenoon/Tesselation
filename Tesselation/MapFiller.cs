@@ -14,6 +14,8 @@ namespace Tesselation
         public int height;
         public List<Shape> potentialshapes = new List<Shape>();
         public List<Shape> placedshapes = new List<Shape>();
+        public List<Shape> adjacentshapes = new List<Shape>();
+        int[] boardstate_atgeneration;
 
         public int[] board;
         public List<int[]> blacklistedboards = new List<int[]>();
@@ -24,7 +26,8 @@ namespace Tesselation
             this.width = width;
             this.height = height;
             this.potentialshapes = potentialshapes;
-            board = new int[width*height];
+            board = new int[width * height];
+            boardstate_atgeneration = new int[width * height];
             foreach (var tile in potentialshapes.SelectMany(s => s.tiles))
             {
                 board[tile.x + tile.y*width] = 0;
@@ -66,11 +69,9 @@ namespace Tesselation
             Random r = new Random();
             int[] boardcopy = new int[width * height];
 
-            if (moves.Count > 50 || CanSumToTarget(potentialshapes.Select(s => s.tiles.Count).Distinct().ToArray(), moves.Count))
+            if ((moves.Count > 50) || CanSumToTarget(potentialshapes.Select(s => s.tiles.Count).Distinct().ToArray(), moves.Count))
             {
                 //check if a possible combination could theoretically exist
-
-
                 List<Shape> shaperotations = potentialshapes.SelectMany(s => s.rotations).ToList();
 
                 foreach (var shape in shaperotations)
@@ -101,14 +102,53 @@ namespace Tesselation
                     return potentialmoves;
                 }
             }
-            //Found no level moves? Backtrace
-            Shape toremove = placedshapes.Last();
+            //Found no level moves? Backtrace if there were many moves available, as it is likely that the problem was caused by the last piece placed
+            Shape toremove;
+            //Use normal backtracing to remove two areas if possible
+            if ((moves.Count > 30 || moves.Count <= 4 || AreaCount(board, width, height) >= 2) && adjacentshapes.Count == 0)
+            {
+                if (board.SequenceEqual(boardstate_atgeneration))
+                {
+                    //Backtracing failed at adjacentshapes[0]
+                    //remove it and try adjacentshapes[1]
+                    foreach (var tile in adjacentshapes[0].tiles) //place the tile back
+                    {
+                        boardstate_atgeneration[tile.x + adjacentshapes[0].placedposition.X + (tile.y + adjacentshapes[0].placedposition.Y) * width] = 1;
+                    }
+                    adjacentshapes.RemoveAt(0); //remove the tile from the list to search
+                    //Remove the next shape
+                    foreach (var tile in adjacentshapes[0].tiles) //place the tile back
+                    {
+                        boardstate_atgeneration[tile.x + adjacentshapes[0].placedposition.X + (tile.y + adjacentshapes[0].placedposition.Y) * width] = 0;
+                    }
+                }
+                toremove = placedshapes.Last();
+            }
+            else
+            {
+                if (adjacentshapes.Count == 0)
+                {
+                    //instead of backtracing, try to remove side pieces
+                    adjacentshapes = placedshapes.Where(shape => shape.touchingsquares.Any(touchingtile => 
+                    moves.Contains(new Point(shape.placedposition.X + touchingtile.X, shape.placedposition.Y + touchingtile.Y)))).ToList();
+
+                    boardstate_atgeneration = new int[width * height];
+                    board.CopyTo(boardstate_atgeneration, 0);
+                }
+                toremove = adjacentshapes[0];
+                foreach (var tile in toremove.tiles)
+                {
+                    boardstate_atgeneration[tile.x + toremove.placedposition.X + (tile.y + toremove.placedposition.Y) * width] = 0;
+                }
+
+            }
+
             potentialmoves.Clear();
             potentialmoves.Add(new MoveData(toremove, 0, false));
             board.CopyTo(boardcopy, 0);
             blacklistedboards.Add(boardcopy);
 
-            var boardsoftcopy = new int[width*height];
+            var boardsoftcopy = new int[width * height];
             board.CopyTo(boardsoftcopy, 0);
 
             foreach (var tile in toremove.tiles)
@@ -116,7 +156,6 @@ namespace Tesselation
                 boardsoftcopy[tile.x + toremove.placedposition.X + (tile.y + toremove.placedposition.Y) * width] = 0;
             }
             visitedboards.RemoveAll(v => v.board.SequenceEqual(boardsoftcopy));
-
             return potentialmoves;
         }
 
@@ -178,7 +217,26 @@ namespace Tesselation
 
             return smallestArea;
         }
+        static int AreaCount(int[] board, int width, int height)
+        {
+            int areacount=0;
+            bool[] visited = new bool[width * height];
 
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    if (board[x + y * width] == 0 && !visited[x + y * width])
+                    {
+                        List<Point> emptyArea = new List<Point>();
+                        DFS(board, x, y, width, height, visited, emptyArea);
+                        ++areacount;
+                    }
+                }
+            }
+
+            return areacount;
+        }
         static void DFS(int[] board, int x, int y, int width, int height, bool[] visited, List<Point> emptyArea)
         {
             if (x < 0 || x >= width || y < 0 || y >= height || visited[x + y*width] || board[x + y * width] != 0)

@@ -123,8 +123,8 @@ namespace Tesselation
             }
         }
 
-        public static int horizontalsquares = 21;
-        public static int verticalsquares = 15;
+        public static int horizontalsquares = 20;
+        public static int verticalsquares = 20;
 
         public List<TilePlacer> tilePlacers = new List<TilePlacer>();
         public List<Shape> placedshapes = new List<Shape>();
