@@ -28,7 +28,7 @@ namespace Tesselation
             this.height = height;
             this.potentialshapes = potentialshapes;
             board = new int[width * height];
-            foreach (var tile in potentialshapes.SelectMany(s => s.tiles))
+            foreach (var tile in potentialshapes.SelectMany(s => s.data.tiles))
             {
                 board[tile.x + tile.y*width] = 0;
             }
@@ -76,7 +76,7 @@ namespace Tesselation
             int[] boardcopy = new int[width * height];
 
             debugtimer.Restart();
-            bool cansum = CanSumToTarget(potentialshapes.Select(s => s.tiles.Count).Distinct().ToArray(), moves.Count);
+            bool cansum = CanSumToTarget(potentialshapes.Select(s => s.data.tiles.Count).Distinct().ToArray(), moves.Count);
             debugtimer.Stop();
             cansumtotargettime += debugtimer.ElapsedTicks;
 
@@ -90,7 +90,7 @@ namespace Tesselation
                     foreach (var placedposition in moves)
                     {
 
-                        bool canplace = !shape.tiles.Any(t => t.x + placedposition.X >= width ||
+                        bool canplace = !shape.data.tiles.Any(t => t.x + placedposition.X >= width ||
                                                              t.y + placedposition.Y >= height ||
                                                              board[t.x + placedposition.X + (t.y + placedposition.Y) * width] == 1);
                         debugtimer.Restart();
@@ -99,7 +99,7 @@ namespace Tesselation
                             //place the piece
                             Shape copy = shape.Place(placedposition);
 
-                            foreach (var tile in shape.tiles)
+                            foreach (var tile in shape.data.tiles)
                             {
                                 board[tile.x + placedposition.X + (tile.y + placedposition.Y) * width] = 1;
                             }
@@ -108,7 +108,7 @@ namespace Tesselation
                                 int touchingsquares = FindTouchingSquares(shape, placedposition);
                                 potentialmoves.Add(new MoveData(copy, touchingsquares, true));
                             }
-                            foreach (var tile in shape.tiles)
+                            foreach (var tile in shape.data.tiles)
                             {
                                 board[tile.x + placedposition.X + (tile.y + placedposition.Y) * width] = 0;
                             } //faster to operate on board rather than copying board
@@ -133,8 +133,8 @@ namespace Tesselation
             if (adjacentshapes.Count == 0 && (moves.Count > 30 || moves.Count <= 4 || AreaCount(board, width, height) >= 2))
             {
                 //instead of backtracing, try to remove side pieces
-                adjacentshapes = placedshapes.Where(shape => shape.touchingsquares.Any(touchingtile =>
-                moves.Contains(new Point(shape.placedposition.X + touchingtile.X, shape.placedposition.Y + touchingtile.Y)))).ToList();
+                adjacentshapes = placedshapes.Where(shape => shape.data.touchingsquares.Any(touchingtile =>
+                moves.Contains(new Point(shape.data.location.X + touchingtile.X, shape.data.location.Y + touchingtile.Y)))).ToList();
 
                 foreach (var shape in adjacentshapes)
                 {
@@ -152,9 +152,9 @@ namespace Tesselation
             var boardsoftcopy = new int[width * height];
             board.CopyTo(boardsoftcopy, 0);
 
-            foreach (var tile in toremove.tiles)
+            foreach (var tile in toremove.data.tiles)
             {
-                boardsoftcopy[tile.x + toremove.placedposition.X + (tile.y + toremove.placedposition.Y) * width] = 0;
+                boardsoftcopy[tile.x + toremove.data.location.X + (tile.y + toremove.data.location.Y) * width] = 0;
             }
             visitedboards.RemoveAll(v => v.board.SequenceEqual(boardsoftcopy));
             debugtimer.Stop();
@@ -165,7 +165,7 @@ namespace Tesselation
         private int FindTouchingSquares(Shape copy, Point position)
         {
             int result = 0;
-            foreach (var point in copy.touchingsquares)
+            foreach (var point in copy.data.touchingsquares)
             {
                 int x = point.X + position.X;
                 int y = point.Y + position.Y;

@@ -70,9 +70,9 @@ namespace Tesselation
                     {
                         placedshapes.Remove(moves[0].shape);
 
-                        foreach (var tile in moves[0].shape.tiles)
+                        foreach (var tile in moves[0].shape.data.tiles)
                         {
-                            mapFiller.board[tile.x + moves[0].shape.placedposition.X + (tile.y + moves[0].shape.placedposition.Y)*mapFiller.width] = 0;
+                            mapFiller.board[tile.x + moves[0].shape.data.location.X + (tile.y + moves[0].shape.data.location.Y)*mapFiller.width] = 0;
                         }
                         mapFiller.placedshapes.Remove(moves[0].shape);
                     }
@@ -84,9 +84,9 @@ namespace Tesselation
                         placedshapes.Add(bestmove.shape);
 
 
-                        foreach (var tile in bestmove.shape.tiles)
+                        foreach (var tile in bestmove.shape.data.tiles)
                         {
-                            mapFiller.board[tile.x + bestmove.shape.placedposition.X + (tile.y + bestmove.shape.placedposition.Y) * mapFiller.width] = 1;
+                            mapFiller.board[tile.x + bestmove.shape.data.location.X + (tile.y + bestmove.shape.data.location.Y) * mapFiller.width] = 1;
                         }
                         DebugDump(bestmove, mapFiller);
 
@@ -94,7 +94,7 @@ namespace Tesselation
                     }
                 }
                 paintfinished = false;
-                const int rendermiliseconds = 1000;
+                const int rendermiliseconds = 30;
                 movesperrender++;
                 if (s.ElapsedMilliseconds > rendermiliseconds)
                 {
@@ -170,8 +170,8 @@ namespace Tesselation
             }
         }
 
-        public static int horizontalsquares = 40;
-        public static int verticalsquares = 40;
+        public static int horizontalsquares = 20;
+        public static int verticalsquares = 20;
 
         public List<TilePlacer> tilePlacers = new List<TilePlacer>();
         public List<Shape> placedshapes = new List<Shape>();
@@ -195,29 +195,29 @@ namespace Tesselation
             foreach (var shape in placedshapes)
             {
                 List<Point> points = new List<Point>();
-                foreach (var tile in shape.tiles)
+                foreach (var tile in shape.data.tiles)
                 {
                     bool tileright = false;
                     bool tileleft = false;
                     bool tileup = false;
                     bool tiledown = false;
 
-                    if (shape.tiles.Any(t => t.x == tile.x && t.y == tile.y - 1))
+                    if (shape.data.tiles.Any(t => t.x == tile.x && t.y == tile.y - 1))
                     {
                         //Tile above, dont shrink
                         tileup = true;
                     }
-                    if (shape.tiles.Any(t => t.x == tile.x && t.y == tile.y + 1))
+                    if (shape.data.tiles.Any(t => t.x == tile.x && t.y == tile.y + 1))
                     {
                         //Tile below, dont shrink
                         tiledown = true;
                     }
-                    if (shape.tiles.Any(t => t.x == tile.x - 1 && t.y == tile.y))
+                    if (shape.data.tiles.Any(t => t.x == tile.x - 1 && t.y == tile.y))
                     {
                         //Tile left, dont shrink
                         tileleft = true;
                     }
-                    if (shape.tiles.Any(t => t.x == tile.x + 1 && t.y == tile.y))
+                    if (shape.data.tiles.Any(t => t.x == tile.x + 1 && t.y == tile.y))
                     {
                         //Tile right, dont shrink
                         tileright = true;
@@ -244,20 +244,20 @@ namespace Tesselation
                         points.Add(new Point(tile.x + 1, tile.y + 1));
                     }
 
-                    Color drawcolor = shape.color;
-                    if (deletingshape == shape.placedposition)
+                    Color drawcolor = shape.data.color;
+                    if (deletingshape == shape.data.location)
                     {
                         drawcolor = Color.Red;
                     }
 
-                    e.Graphics.FillRectangle(new Pen(drawcolor).Brush, (shape.placedposition.X + tile.x) * squaresize + leftoffset, (shape.placedposition.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
+                    e.Graphics.FillRectangle(new Pen(drawcolor).Brush, (shape.data.location.X + tile.x) * squaresize + leftoffset, (shape.data.location.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
                 }
                 points = points.Distinct().ToList();
-                points = OrderPoints(points, shape.tiles);
+                points = OrderPoints(points, shape.data.tiles);
                 for (int i = 0; i < points.Count(); ++i)
                 {
-                    int newx = (points[i].X + shape.placedposition.X) * squaresize + leftoffset;
-                    int newy = (points[i].Y + shape.placedposition.Y) * squaresize + topoffset;
+                    int newx = (points[i].X + shape.data.location.X) * squaresize + leftoffset;
+                    int newy = (points[i].Y + shape.data.location.Y) * squaresize + topoffset;
                     points[i] = new Point(newx, newy);
                     //e.Graphics.FillEllipse(new Pen(Color.Purple).Brush, new Rectangle(newx-4, newy-4, 8, 8));
                 }
@@ -268,18 +268,18 @@ namespace Tesselation
             if (placingtile.X != -1 && !(placingshape is null))
             {
                 Color previewcolor = Color.LightGreen;
-                if (placingshape.tiles.Any(t => t.x + placingtile.X >= horizontalsquares || t.y + placingtile.Y >= verticalsquares))
+                if (placingshape.data.tiles.Any(t => t.x + placingtile.X >= horizontalsquares || t.y + placingtile.Y >= verticalsquares))
                 {
                     previewcolor = Color.Red;
                 }
                 foreach (var shape in placedshapes)
                 {
-                    if (shape.tiles.Any(t2 => placingshape.tiles.Any(
-                        t => t2.x + shape.placedposition.X == t.x + placingtile.X &&
-                        t2.y + shape.placedposition.Y == t.y + placingtile.Y //Check for overwriting
+                    if (shape.data.tiles.Any(t2 => placingshape.data.tiles.Any(
+                        t => t2.x + shape.data.location.X == t.x + placingtile.X &&
+                        t2.y + shape.data.location.Y == t.y + placingtile.Y //Check for overwriting
 
-                        || (shape.color == placingshape.color && ((Math.Abs(t.x + placingtile.X - (t2.x + shape.placedposition.X)) == 1 && t2.y + shape.placedposition.Y == t.y + placingtile.Y)
-                        || (Math.Abs(t.y + placingtile.Y - (t2.y + shape.placedposition.Y)) == 1 && t2.x + shape.placedposition.X == t.x + placingtile.X)))
+                        || (shape.data.color == placingshape.data.color && ((Math.Abs(t.x + placingtile.X - (t2.x + shape.data.location.X)) == 1 && t2.y + shape.data.location.Y == t.y + placingtile.Y)
+                        || (Math.Abs(t.y + placingtile.Y - (t2.y + shape.data.location.Y)) == 1 && t2.x + shape.data.location.X == t.x + placingtile.X)))
                     )))
                     {
                         previewcolor = Color.Red;
@@ -288,7 +288,7 @@ namespace Tesselation
                 }
                 cantplace = previewcolor == Color.Red;
                 previewcolor = Color.FromArgb(200, previewcolor.R, previewcolor.G, previewcolor.B);
-                foreach (var tile in placingshape.tiles)
+                foreach (var tile in placingshape.data.tiles)
                 {
                     if (tile.x + placingtile.X >= horizontalsquares || tile.y + placingtile.Y >= verticalsquares)
                     {
@@ -398,11 +398,11 @@ namespace Tesselation
                 int localx = (canvas.PointToClient(Cursor.Position).X - leftoffset) / squaresize;
                 int localy = (canvas.PointToClient(Cursor.Position).Y - topoffset) / squaresize;
 
-                Shape hover = placedshapes.FirstOrDefault(s => s.tiles.Any(t => t.x + s.placedposition.X == localx && t.y + s.placedposition.Y == localy));
+                Shape hover = placedshapes.FirstOrDefault(s => s.data.tiles.Any(t => t.x + s.data.location.X == localx && t.y + s.data.location.Y == localy));
 
                 if (!(hover is null))
                 {
-                    deletingshape = hover.placedposition;
+                    deletingshape = hover.data.location;
                     canvas.Invalidate();
                 }
             }
@@ -412,7 +412,7 @@ namespace Tesselation
         {
             if (!(placingshape is null) && placingtile.X != -1 && !cantplace)
             {
-                foreach (var tile in placingshape.tiles)
+                foreach (var tile in placingshape.data.tiles)
                 {
                     if (tile.x + placingtile.X >= horizontalsquares || tile.y + placingtile.Y >= verticalsquares)
                     {
@@ -424,7 +424,7 @@ namespace Tesselation
             }
             if (deleting && deletingshape.X != -1)
             {
-                placedshapes.Remove(placedshapes.FirstOrDefault(s => s.placedposition.X == deletingshape.X && s.placedposition.Y == deletingshape.Y));
+                placedshapes.Remove(placedshapes.FirstOrDefault(s => s.data.location.X == deletingshape.X && s.data.location.Y == deletingshape.Y));
                 canvas.Invalidate();
             }
         }
@@ -487,17 +487,17 @@ namespace Tesselation
 
         public void Draw(object sender, PaintEventArgs e)
         {
-            float shapescreensize = ((float)bounds.Width / shape.width);
+            float shapescreensize = ((float)bounds.Width / shape.data.width);
             background.BackColor = Color.Black;
             
-            for (int x = 0; x<shape.width;++x)
+            for (int x = 0; x<shape.data.width;++x)
             {
-                for (int y = 0; y < shape.width; ++y)
+                for (int y = 0; y < shape.data.width; ++y)
                 {
                     Color drawingcolor = selected ? Color.LightGreen : Color.White;
-                    if (shape.tiles.Any(t=>t.x == x && t.y == y))
+                    if (shape.data.tiles.Any(t=>t.x == x && t.y == y))
                     {
-                        drawingcolor = shape.color;
+                        drawingcolor = shape.data.color;
                     }
                     e.Graphics.FillRectangle(new Pen(drawingcolor).Brush, new RectangleF(x * shapescreensize+1, y * shapescreensize+1, shapescreensize-2, shapescreensize-2));
 
