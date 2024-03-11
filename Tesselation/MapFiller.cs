@@ -16,6 +16,8 @@ namespace Tesselation
         [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl)]
         static extern int memcpy(byte* b1, byte* b2, long count);
         static extern int memcpy(byte* b1, byte b2, long count);
+        public static extern IntPtr memcpy(IntPtr dest, IntPtr src, UIntPtr count);
+
 
         public int width;
         public int height;
@@ -125,7 +127,7 @@ namespace Tesselation
                 }
                 if (potentialmoves.Count >= 1)
                 {
-                    board.CopyTo(boardcopy, 0);
+                    memcpy(boardcopy.data, board.data, board.size);
                     visitedboards.Add(new BoardMoves(boardcopy, potentialmoves));
                     return potentialmoves;
                 }
@@ -150,17 +152,18 @@ namespace Tesselation
 
             potentialmoves.Clear();
             potentialmoves.Add(new MoveData(toremove.data, 0, false));
-            board.CopyTo(boardcopy, 0);
+            memcpy(boardcopy.data, board.data, board.size);
             blacklistedboards.Add(boardcopy);
 
-            var boardsoftcopy = new int[width * height];
-            board.CopyTo(boardsoftcopy, 0);
+            byte* boardsoftcopy = (byte*)Marshal.AllocHGlobal(board.size);
+            memcpy(boardsoftcopy, board.data, board.size);
 
             foreach (var tile in toremove.data.tiles)
             {
                 boardsoftcopy[tile.x + toremove.data.location.X + (tile.y + toremove.data.location.Y) * width] = 0;
             }
-            visitedboards.RemoveAll(v => memcpy(v.board.) v.board.SequenceEqual(boardsoftcopy));
+            visitedboards.RemoveAll(v => memcpy(v.board.data, boardsoftcopy, board.size) == 1);
+            Marshal.FreeHGlobal((nint)boardsoftcopy);
             debugtimer.Stop();
             backtracetime += debugtimer.ElapsedTicks;
             return potentialmoves;
@@ -185,7 +188,7 @@ namespace Tesselation
             return result;
         }
 
-        static List<Point> FindEmptyArea(int[] board, int width, int height)
+        static List<Point> FindEmptyArea(Board board, int width, int height)
         {
             List<List<Point>> emptyAreas = new List<List<Point>>();
 
@@ -195,7 +198,7 @@ namespace Tesselation
             {
                 for (int y = 0; y < height; y++)
                 {
-                    if (board[x + y*width] == 0 && !visited[x + y * width])
+                    if (board.GetData(x,y) == false && !visited[x + y * width])
                     {
                         List<Point> emptyArea = new List<Point>();
                         DFS(board, x, y, width, height, visited, emptyArea);
@@ -224,7 +227,7 @@ namespace Tesselation
 
             return smallestArea;
         }
-        static int AreaCount(int[] board, int width, int height)
+        static int AreaCount(Board board, int width, int height)
         {
             int areacount=0;
             bool[] visited = new bool[width * height];
@@ -233,7 +236,7 @@ namespace Tesselation
             {
                 for (int y = 0; y < height; y++)
                 {
-                    if (board[x + y * width] == 0 && !visited[x + y * width])
+                    if (board.GetData(x, y) == false && !visited[x + y * width])
                     {
                         List<Point> emptyArea = new List<Point>();
                         DFS(board, x, y, width, height, visited, emptyArea);
@@ -244,9 +247,9 @@ namespace Tesselation
 
             return areacount;
         }
-        static void DFS(int[] board, int x, int y, int width, int height, bool[] visited, List<Point> emptyArea)
+        static void DFS(Board board, int x, int y, int width, int height, bool[] visited, List<Point> emptyArea)
         {
-            if (x < 0 || x >= width || y < 0 || y >= height || visited[x + y*width] || board[x + y * width] != 0)
+            if (x < 0 || x >= width || y < 0 || y >= height || visited[x + y*width] || board.GetData(x, y) == true)
             {
                 return;
             }
