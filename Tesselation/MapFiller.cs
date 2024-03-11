@@ -89,22 +89,32 @@ namespace Tesselation
                 {
                     foreach (var placedposition in moves)
                     {
+
+                        bool canplace = !shape.tiles.Any(t => t.x + placedposition.X >= width ||
+                                                             t.y + placedposition.Y >= height ||
+                                                             board[t.x + placedposition.X + (t.y + placedposition.Y) * width] == 1);
                         debugtimer.Restart();
-                        if (!shape.tiles.Any(t => t.x + placedposition.X >= width || t.y + placedposition.Y >= height || board[t.x + placedposition.X + (t.y + placedposition.Y) * width] == 1))
+                        if (canplace)
                         {
                             //place the piece
                             Shape copy = shape.Place(placedposition);
-                            board.CopyTo(boardcopy, 0);
+
                             foreach (var tile in shape.tiles)
                             {
-                                boardcopy[tile.x + placedposition.X + (tile.y + placedposition.Y) * width] = 1;
+                                board[tile.x + placedposition.X + (tile.y + placedposition.Y) * width] = 1;
                             }
-                            if (!blacklistedboards.Any(b => boardcopy.SequenceEqual(b)))
+                            if (!blacklistedboards.Any(b => board.SequenceEqual(b)))
                             {
                                 int touchingsquares = FindTouchingSquares(shape, placedposition);
                                 potentialmoves.Add(new MoveData(copy, touchingsquares, true));
                             }
+                            foreach (var tile in shape.tiles)
+                            {
+                                board[tile.x + placedposition.X + (tile.y + placedposition.Y) * width] = 0;
+                            } //faster to operate on board rather than copying board
+
                         }
+
                         debugtimer.Stop();
                         blacklisttesttime += debugtimer.ElapsedTicks;
                     }

@@ -99,7 +99,7 @@ namespace Tesselation
                 if (s.ElapsedMilliseconds > rendermiliseconds)
                 {
                     s.Stop();
-                    UpdateAILabel((int)s.ElapsedTicks, movesperrender);
+                    UpdateAILabel((int)s.ElapsedMilliseconds, movesperrender);
                     s.Restart();
                     canvas.Invalidate();
                     movesperrender = 0;
@@ -149,15 +149,20 @@ namespace Tesselation
             }
             return result;
         }
-        private void UpdateAILabel(int ticks, int moves)
+        private void UpdateAILabel(int milis, int moves)
         {
             if (label1.InvokeRequired)
             {
-                label1.BeginInvoke(new Action(() => UpdateAILabel(ticks, moves)));
+                label1.BeginInvoke(new Action(() => UpdateAILabel(milis, moves)));
             }
             else
             {
-                label1.Text = $"Totaltime:{ticks}\nemptyareatime:{mapFiller.emptyareatime}\ncansumtotargettime:{mapFiller.cansumtotargettime}\nblacklisttesttime:{mapFiller.blacklisttesttime}\nbacktracetime:{mapFiller.backtracetime}";
+                double emptyareams = mapFiller.emptyareatime / (double)10000;
+                double cansumtotargetms = mapFiller.cansumtotargettime / (double)10000;
+                double blacklisttestms = mapFiller.blacklisttesttime / (double)10000;
+                double backtracems = mapFiller.backtracetime / (double)10000;
+
+                label1.Text = $"Totaltime:{milis}\nemptyareatime:{emptyareams}\ncansumtotargettime:{cansumtotargetms}\nblacklisttesttime:{blacklisttestms}\nbacktracetime:{backtracems}";
                 mapFiller.emptyareatime = 0;
                 mapFiller.cansumtotargettime = 0;
                 mapFiller.blacklisttesttime = 0;
