@@ -68,29 +68,31 @@ namespace Tesselation
                 {
                     if (moves.Count == 1 && !moves[0].isplacing)
                     {
-                        placedshapes.Remove(moves[0].shape);
+                        placedshapes.RemoveAll(s=>s.data.location.X == moves[0].shape.location.X &&
+                                                             s.data.location.Y == moves[0].shape.location.Y);
 
-                        foreach (var tile in moves[0].shape.data.tiles)
+                        foreach (var tile in moves[0].shape.tiles)
                         {
-                            mapFiller.board[tile.x + moves[0].shape.data.location.X + (tile.y + moves[0].shape.data.location.Y)*mapFiller.width] = 0;
+                            mapFiller.board[tile.x + moves[0].shape.location.X + (tile.y + moves[0].shape.location.Y)*mapFiller.width] = 0;
                         }
-                        mapFiller.placedshapes.Remove(moves[0].shape);
+                        mapFiller.placedshapes.RemoveAll(s => s.data.location.X == moves[0].shape.location.X &&
+                                     s.data.location.Y == moves[0].shape.location.Y);
                     }
                     else
                     {
                         var bestmove = moves.OrderByDescending(t => t.touchingborders).FirstOrDefault();
                         int squares = bestmove.touchingborders;
                         bestmove = moves.Where(m=>m.touchingborders >= squares).ToList().Shuffle().FirstOrDefault();
-                        placedshapes.Add(bestmove.shape);
+                        placedshapes.Add(new Shape(bestmove.shape));
 
 
-                        foreach (var tile in bestmove.shape.data.tiles)
+                        foreach (var tile in bestmove.shape.tiles)
                         {
-                            mapFiller.board[tile.x + bestmove.shape.data.location.X + (tile.y + bestmove.shape.data.location.Y) * mapFiller.width] = 1;
+                            mapFiller.board[tile.x + bestmove.shape.location.X + (tile.y + bestmove.shape.location.Y) * mapFiller.width] = 1;
                         }
-                        DebugDump(bestmove, mapFiller);
+                        //DebugDump(bestmove, mapFiller);
 
-                        mapFiller.placedshapes.Add(bestmove.shape);
+                        mapFiller.placedshapes.Add(new Shape(bestmove.shape));
                     }
                 }
                 paintfinished = false;

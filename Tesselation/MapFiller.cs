@@ -89,15 +89,14 @@ namespace Tesselation
                 {
                     foreach (var placedposition in moves)
                     {
-
+                        debugtimer.Restart();
                         bool canplace = !shape.data.tiles.Any(t => t.x + placedposition.X >= width ||
                                                              t.y + placedposition.Y >= height ||
                                                              board[t.x + placedposition.X + (t.y + placedposition.Y) * width] == 1);
-                        debugtimer.Restart();
                         if (canplace)
                         {
                             //place the piece
-                            Shape copy = shape.Place(placedposition);
+                            var copy = shape.PlaceData(placedposition);
 
                             foreach (var tile in shape.data.tiles)
                             {
@@ -145,7 +144,7 @@ namespace Tesselation
             toremove = placedshapes.Last();
 
             potentialmoves.Clear();
-            potentialmoves.Add(new MoveData(toremove, 0, false));
+            potentialmoves.Add(new MoveData(toremove.data, 0, false));
             board.CopyTo(boardcopy, 0);
             blacklistedboards.Add(boardcopy);
 
@@ -258,11 +257,11 @@ namespace Tesselation
     }
     public class MoveData
     {
-        public Shape shape;
+        public ShapeData shape;
         public int touchingborders;
         public bool isplacing;
 
-        public MoveData(Shape shape, int touchingborders, bool isplacing)
+        public MoveData(ShapeData shape, int touchingborders, bool isplacing)
         {
             this.shape = shape;
             this.touchingborders = touchingborders;

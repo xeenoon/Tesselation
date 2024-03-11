@@ -63,6 +63,17 @@ namespace Tesselation
             data = new ShapeData(width, height, new Point(0, 0));
             data.color = potentialcolors[r.Next(0, potentialcolors.Count())];
         }
+        public Shape(ShapeData data)
+        {
+            this.data = data;
+
+            for (int i = 0; i < 4; ++i)
+            {
+                rotations.Add(Rotate(i * 90));
+            }
+            data.touchingsquares = data.touchingsquares.Distinct().ToList();
+            data.touchingsquares.RemoveAll(t => data.tiles.Any(tile => tile.x == t.X && tile.y == t.Y));
+        }
 
         public void GenerateShape(int tilecount)
         {
@@ -174,7 +185,7 @@ namespace Tesselation
         internal ShapeData PlaceData(Point placingtile)
         {
             ShapeData duplicate = new ShapeData(data.width, data.height, placingtile);
-            foreach (var tile in duplicate.tiles)
+            foreach (var tile in data.tiles)
             {
                 duplicate.tiles.Add(new Tile(tile.x, tile.y));
             }
