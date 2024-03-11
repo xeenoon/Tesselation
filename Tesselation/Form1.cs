@@ -265,7 +265,7 @@ namespace Tesselation
             }
 
 
-            if (placingtile.X != -1 && !(placingshape is null))
+            if (placingtile.X != -1 && !(placingshape.isnull))
             {
                 Color previewcolor = Color.LightGreen;
                 if (placingshape.tiles.Any(t => t.x + placingtile.X >= horizontalsquares || t.y + placingtile.Y >= verticalsquares))
@@ -386,7 +386,7 @@ namespace Tesselation
         Point deletingshape;
         private void canvas_MouseMove(object sender, MouseEventArgs e)
         {
-            if (!(placingshape is null))
+            if (!(placingshape.isnull))
             {
                 int tilex = (canvas.PointToClient(Cursor.Position).X - leftoffset) / squaresize;
                 int tiley = (canvas.PointToClient(Cursor.Position).Y - topoffset) / squaresize;
@@ -400,7 +400,7 @@ namespace Tesselation
 
                 Shape hover = placedshapes.FirstOrDefault(s => s.tiles.Any(t => t.x + s.placedposition.X == localx && t.y + s.placedposition.Y == localy));
 
-                if (!(hover is null))
+                if (!(hover.isnull))
                 {
                     deletingshape = hover.placedposition;
                     canvas.Invalidate();
@@ -410,7 +410,7 @@ namespace Tesselation
 
         private void canvas_Click(object sender, EventArgs e)
         {
-            if (!(placingshape is null) && placingtile.X != -1 && !cantplace)
+            if (!(placingshape.isnull) && placingtile.X != -1 && !cantplace)
             {
                 foreach (var tile in placingshape.tiles)
                 {
@@ -432,7 +432,7 @@ namespace Tesselation
         public bool deleting;
         public void DeleteClick(object sender, EventArgs e)
         {
-            placingshape = null;
+            placingshape.isnull = true;
             foreach (var tileplacer in tilePlacers)
             {
                 tileplacer.background.BackColor = Color.White;
@@ -451,7 +451,7 @@ namespace Tesselation
 
         private void MainForm_KeyPress(object sender, KeyPressEventArgs e)
         {
-            if (e.KeyChar == 'r' && !(placingshape is null)) //rotate
+            if (e.KeyChar == 'r' && !(placingshape.isnull)) //rotate
             {
                 placingshape = placingshape.Rotate(90);
                 placingshape.LeftCornerAdjust();
@@ -525,7 +525,7 @@ namespace Tesselation
             else
             {
                 selected = false;
-                MainForm.instance.placingshape = null;
+                MainForm.instance.placingshape.isnull = true;
             }
             background.Invalidate();
         }

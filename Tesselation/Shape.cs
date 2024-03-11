@@ -26,8 +26,9 @@ namespace Tesselation
         Down=4,
         Left=8,
     }
-    public class Shape
+    public struct Shape
     {
+        public bool isnull = true;
         public List<Tile> tiles = new List<Tile>();
         public List<Point> touchingsquares = new List<Point>();
 
@@ -42,6 +43,7 @@ namespace Tesselation
 
         public Shape(int tilecount, int width, int height)
         {
+            isnull = false;
             this.width = width;
             this.height = height;
             this.color = potentialcolors[r.Next(0, potentialcolors.Count())];
@@ -49,6 +51,7 @@ namespace Tesselation
         }
         public Shape(int width, int height)
         {
+            isnull = false;
             this.width = width;
             this.height = height;
         }
@@ -164,7 +167,7 @@ namespace Tesselation
 
         public static bool operator ==(Shape a, Shape b)
         {
-            if (a is null || b is null)
+            if (a.isnull || b.isnull)
             {
                 return false;
             }
