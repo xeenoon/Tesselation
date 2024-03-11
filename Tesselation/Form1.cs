@@ -6,6 +6,9 @@ namespace Tesselation
 {
     public partial class MainForm : Form
     {
+        public static int horizontalsquares = 100;
+        public static int verticalsquares = 100;
+
         public static MainForm instance;
         public static SplitContainer menusplit;
 
@@ -171,9 +174,6 @@ namespace Tesselation
                 mapFiller.backtracetime = 0;
             }
         }
-
-        public static int horizontalsquares = 20;
-        public static int verticalsquares = 20;
 
         public List<TilePlacer> tilePlacers = new List<TilePlacer>();
         public List<Shape> placedshapes = new List<Shape>();
