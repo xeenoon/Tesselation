@@ -4,22 +4,27 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Tesselation;
 
 namespace Tesselation
 {
-    public class MapFiller
+    public unsafe class MapFiller
     {
+        [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl)]
+        static extern int memcpy(byte* b1, byte* b2, long count);
+        static extern int memcpy(byte* b1, byte b2, long count);
+
         public int width;
         public int height;
         public List<Shape> potentialshapes = new List<Shape>();
         public List<Shape> placedshapes = new List<Shape>();
         public List<Shape> adjacentshapes = new List<Shape>();
 
-        public int[] board;
-        public List<int[]> blacklistedboards = new List<int[]>();
+        public Board board;
+        public List<Board> blacklistedboards = new List<Board>();
         public List<BoardMoves> visitedboards = new List<BoardMoves>();
 
         public MapFiller(int width, int height, List<Shape> potentialshapes)
@@ -27,10 +32,10 @@ namespace Tesselation
             this.width = width;
             this.height = height;
             this.potentialshapes = potentialshapes;
-            board = new int[width * height];
+            board = new Board(width, height);
             foreach (var tile in potentialshapes.SelectMany(s => s.data.tiles))
             {
-                board[tile.x + tile.y*width] = 0;
+                board.ClearBit(tile.x, tile.y);
             }
         }
 
@@ -62,7 +67,7 @@ namespace Tesselation
 
         public List<MoveData> GenerateMoves()
         {
-            var precalcmoves = visitedboards.FirstOrDefault(bm => bm.board.SequenceEqual(board));
+            var precalcmoves = visitedboards.FirstOrDefault(bm => memcpy(bm.board.data, board.data, board.size) == 1);
             if (!(precalcmoves is null))
             {
                 return precalcmoves.moves;
@@ -73,7 +78,7 @@ namespace Tesselation
             debugtimer.Stop();
             emptyareatime += debugtimer.ElapsedTicks;
             Random r = new Random();
-            int[] boardcopy = new int[width * height];
+            Board boardcopy = new Board(width, height);
 
             debugtimer.Restart();
             bool cansum = CanSumToTarget(potentialshapes.Select(s => s.data.tiles.Count).Distinct().ToArray(), moves.Count);
@@ -92,7 +97,7 @@ namespace Tesselation
                         debugtimer.Restart();
                         bool canplace = !shape.data.tiles.Any(t => t.x + placedposition.X >= width ||
                                                              t.y + placedposition.Y >= height ||
-                                                             board[t.x + placedposition.X + (t.y + placedposition.Y) * width] == 1);
+                                                             board.GetData(t.x + placedposition.X, (t.y + placedposition.Y) * width) == true);
                         if (canplace)
                         {
                             //place the piece
@@ -100,16 +105,16 @@ namespace Tesselation
 
                             foreach (var tile in shape.data.tiles)
                             {
-                                board[tile.x + placedposition.X + (tile.y + placedposition.Y) * width] = 1;
+                                board.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
                             }
-                            if (!blacklistedboards.Any(b => board.SequenceEqual(b)))
+                            if (!blacklistedboards.Any(b => memcpy(b.data, board.data, board.size) == 1))
                             {
                                 int touchingsquares = FindTouchingSquares(shape, placedposition);
                                 potentialmoves.Add(new MoveData(copy, touchingsquares, true));
                             }
                             foreach (var tile in shape.data.tiles)
                             {
-                                board[tile.x + placedposition.X + (tile.y + placedposition.Y) * width] = 0;
+                                board.ClearBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
                             } //faster to operate on board rather than copying board
 
                         }
@@ -155,7 +160,7 @@ namespace Tesselation
             {
                 boardsoftcopy[tile.x + toremove.data.location.X + (tile.y + toremove.data.location.Y) * width] = 0;
             }
-            visitedboards.RemoveAll(v => v.board.SequenceEqual(boardsoftcopy));
+            visitedboards.RemoveAll(v => memcpy(v.board.) v.board.SequenceEqual(boardsoftcopy));
             debugtimer.Stop();
             backtracetime += debugtimer.ElapsedTicks;
             return potentialmoves;
@@ -172,7 +177,7 @@ namespace Tesselation
                 {
                     ++result;
                 }
-                else if (board[x + y * width] == 1)
+                else if (board.GetData(x,y) == true)
                 {
                     result += 1;
                 }
@@ -270,10 +275,10 @@ namespace Tesselation
     }
     public class BoardMoves
     {
-        public int[] board;
+        public Board board;
         public List<MoveData> moves;
 
-        public BoardMoves(int[] board, List<MoveData> moves)
+        public BoardMoves(Board board, List<MoveData> moves)
         {
             this.board = board;
             this.moves = moves;

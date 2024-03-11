@@ -1,11 +1,17 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Security.Policy;
 using System.Windows.Forms;
 
 namespace Tesselation
 {
-    public partial class MainForm : Form
+    public unsafe partial class MainForm : Form
     {
+        [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl)]
+        static extern int memcpy(byte* b1, byte* b2, long count);
+        static extern int memcpy(byte* b1, byte b2, long count);
+
+
         public static int horizontalsquares = 100;
         public static int verticalsquares = 100;
 
@@ -57,6 +63,7 @@ namespace Tesselation
         System.Timers.Timer AIMoveDelay = new System.Timers.Timer(1000);
         MapFiller mapFiller;
         bool paintfinished = false;
+
         public void AIMove(object sender, EventArgs e)
         {
             int iterations = 0;
@@ -76,7 +83,7 @@ namespace Tesselation
 
                         foreach (var tile in moves[0].shape.tiles)
                         {
-                            mapFiller.board[tile.x + moves[0].shape.location.X + (tile.y + moves[0].shape.location.Y)*mapFiller.width] = 0;
+                            mapFiller.board.ClearBit(tile.x + moves[0].shape.location.X, (tile.y + moves[0].shape.location.Y));
                         }
                         mapFiller.placedshapes.RemoveAll(s => s.data.location.X == moves[0].shape.location.X &&
                                      s.data.location.Y == moves[0].shape.location.Y);
@@ -91,7 +98,7 @@ namespace Tesselation
 
                         foreach (var tile in bestmove.shape.tiles)
                         {
-                            mapFiller.board[tile.x + bestmove.shape.location.X + (tile.y + bestmove.shape.location.Y) * mapFiller.width] = 1;
+                            mapFiller.board.SetBit(tile.x + bestmove.shape.location.X, (tile.y + bestmove.shape.location.Y));
                         }
                         //DebugDump(bestmove, mapFiller);
 
@@ -115,7 +122,10 @@ namespace Tesselation
                     }
                 }
                 //Thread.Sleep(100);
-                if (mapFiller.board.All(i=>i==1))
+                int mapsize = (mapFiller.board.width * mapFiller.board.height) / 8;
+                byte* temp = (byte*)Marshal.AllocHGlobal(mapsize);
+                memcpy(temp, (byte)0xff, mapsize);
+                if (memcpy(mapFiller.board.data, temp, mapsize) == 0) //Fast way to check if board is full
                 {
                     canvas.Invalidate();
                     return; //issolved
@@ -124,7 +134,7 @@ namespace Tesselation
         }
         const string dumpfile = @"C:\Users\ccw10\Downloads\debugdump.txt";
 
-        private void DebugDump(MoveData bestmove, MapFiller mapfiller)
+        /*private void DebugDump(MoveData bestmove, MapFiller mapfiller)
         {
             var existingdump = File.ReadAllText(dumpfile);            
 
@@ -135,8 +145,7 @@ namespace Tesselation
             }
             existingdump += "]}\n";
             File.WriteAllText(dumpfile, existingdump);
-        }
-
+        }*/
         public string ArryStr(int[] board)
         {
             string result = "";
