@@ -17,6 +17,7 @@ namespace Tesselation
 
         public MainForm()
         {
+            File.WriteAllText(dumpfile, "");
             instance = this;
             this.FormBorderStyle = FormBorderStyle.None;
             this.WindowState = FormWindowState.Maximized;
@@ -58,6 +59,7 @@ namespace Tesselation
             int iterations = 0;
             Stopwatch s = new Stopwatch();
             s.Start();
+            int movesperrender = 0;
             while (true) 
             {
                 ++iterations;
@@ -92,20 +94,22 @@ namespace Tesselation
                     }
                 }
                 paintfinished = false;
-                const int moves_per_render = 1;
-                if (iterations % moves_per_render == 0)
+                const int rendermiliseconds = 1000;
+                movesperrender++;
+                if (s.ElapsedMilliseconds > rendermiliseconds)
                 {
                     s.Stop();
-                    UpdateAILabel((int)s.ElapsedMilliseconds, moves_per_render);
+                    UpdateAILabel((int)s.ElapsedTicks, movesperrender);
                     s.Restart();
                     canvas.Invalidate();
+                    movesperrender = 0;
 
                     while (!paintfinished)
                     {
                         //wait for paint to finish
                     }
                 }
-                Thread.Sleep(100);
+                //Thread.Sleep(100);
                 if (mapFiller.board.All(i=>i==1))
                 {
                     canvas.Invalidate();
@@ -113,10 +117,10 @@ namespace Tesselation
                 }
             }
         }
+        const string dumpfile = @"C:\Users\ccw10\Downloads\debugdump.txt";
 
         private void DebugDump(MoveData bestmove, MapFiller mapfiller)
         {
-            string dumpfile = @"C:\Users\ccw10\Downloads\debugdump.txt";
             var existingdump = File.ReadAllText(dumpfile);            
 
             existingdump += "{" + ArryStr(mapfiller.board) + ":[";
@@ -145,20 +149,24 @@ namespace Tesselation
             }
             return result;
         }
-        private void UpdateAILabel(int milliseconds, int moves)
+        private void UpdateAILabel(int ticks, int moves)
         {
             if (label1.InvokeRequired)
             {
-                label1.BeginInvoke(new Action(() => UpdateAILabel(milliseconds, moves)));
+                label1.BeginInvoke(new Action(() => UpdateAILabel(ticks, moves)));
             }
             else
             {
-                label1.Text = (milliseconds / ((float)moves)).ToString() + " miliseconds per move";
+                label1.Text = $"Totaltime:{ticks}\nemptyareatime:{mapFiller.emptyareatime}\ncansumtotargettime:{mapFiller.cansumtotargettime}\nblacklisttesttime:{mapFiller.blacklisttesttime}\nbacktracetime:{mapFiller.backtracetime}";
+                mapFiller.emptyareatime = 0;
+                mapFiller.cansumtotargettime = 0;
+                mapFiller.blacklisttesttime = 0;
+                mapFiller.backtracetime = 0;
             }
         }
 
-        public static int horizontalsquares = 10;
-        public static int verticalsquares = 10;
+        public static int horizontalsquares = 40;
+        public static int verticalsquares = 40;
 
         public List<TilePlacer> tilePlacers = new List<TilePlacer>();
         public List<Shape> placedshapes = new List<Shape>();

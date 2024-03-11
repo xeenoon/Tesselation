@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Tesselation;
@@ -52,6 +54,11 @@ namespace Tesselation
 
             return dp[targetSum];
         }
+        Stopwatch debugtimer = new Stopwatch();
+        public long emptyareatime;
+        public long cansumtotargettime;
+        public long blacklisttesttime;
+        public long backtracetime;
 
         public List<MoveData> GenerateMoves()
         {
@@ -60,13 +67,20 @@ namespace Tesselation
             {
                 return precalcmoves.moves;
             }
-
+            debugtimer.Restart();
             List<MoveData> potentialmoves = new List<MoveData>();
             var moves = FindEmptyArea(board, width, height);
+            debugtimer.Stop();
+            emptyareatime += debugtimer.ElapsedTicks;
             Random r = new Random();
             int[] boardcopy = new int[width * height];
 
-            if ((moves.Count > 50) || CanSumToTarget(potentialshapes.Select(s => s.tiles.Count).Distinct().ToArray(), moves.Count))
+            debugtimer.Restart();
+            bool cansum = CanSumToTarget(potentialshapes.Select(s => s.tiles.Count).Distinct().ToArray(), moves.Count);
+            debugtimer.Stop();
+            cansumtotargettime += debugtimer.ElapsedTicks;
+
+            if ((moves.Count > 50) || cansum)
             {
                 //check if a possible combination could theoretically exist
                 List<Shape> shaperotations = potentialshapes.SelectMany(s => s.rotations).ToList();
@@ -75,6 +89,7 @@ namespace Tesselation
                 {
                     foreach (var placedposition in moves)
                     {
+                        debugtimer.Restart();
                         if (!shape.tiles.Any(t => t.x + placedposition.X >= width || t.y + placedposition.Y >= height || board[t.x + placedposition.X + (t.y + placedposition.Y) * width] == 1))
                         {
                             //place the piece
@@ -90,6 +105,8 @@ namespace Tesselation
                                 potentialmoves.Add(new MoveData(copy, touchingsquares, true));
                             }
                         }
+                        debugtimer.Stop();
+                        blacklisttesttime += debugtimer.ElapsedTicks;
                     }
                 }
                 if (potentialmoves.Count >= 1)
@@ -99,7 +116,8 @@ namespace Tesselation
                     return potentialmoves;
                 }
             }
-            //Found no level moves? Backtrace if there were many moves available, as it is likely that the problem was caused by the last piece placed
+            debugtimer.Start();
+            //Found no legal moves? Backtrace if there were many moves available, as it is likely that the problem was caused by the last piece placed
             Shape toremove;
             //Use normal backtracing to remove two areas if possible
             if (adjacentshapes.Count == 0 && (moves.Count > 30 || moves.Count <= 4 || AreaCount(board, width, height) >= 2))
@@ -129,6 +147,8 @@ namespace Tesselation
                 boardsoftcopy[tile.x + toremove.placedposition.X + (tile.y + toremove.placedposition.Y) * width] = 0;
             }
             visitedboards.RemoveAll(v => v.board.SequenceEqual(boardsoftcopy));
+            debugtimer.Stop();
+            backtracetime += debugtimer.ElapsedTicks;
             return potentialmoves;
         }
 
