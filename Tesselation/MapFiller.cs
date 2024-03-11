@@ -15,7 +15,6 @@ namespace Tesselation
         public List<Shape> potentialshapes = new List<Shape>();
         public List<Shape> placedshapes = new List<Shape>();
         public List<Shape> adjacentshapes = new List<Shape>();
-        int[] boardstate_atgeneration;
 
         public int[] board;
         public List<int[]> blacklistedboards = new List<int[]>();
@@ -27,7 +26,6 @@ namespace Tesselation
             this.height = height;
             this.potentialshapes = potentialshapes;
             board = new int[width * height];
-            boardstate_atgeneration = new int[width * height];
             foreach (var tile in potentialshapes.SelectMany(s => s.tiles))
             {
                 board[tile.x + tile.y*width] = 0;
@@ -54,7 +52,6 @@ namespace Tesselation
 
             return dp[targetSum];
         }
-
 
         public List<MoveData> GenerateMoves()
         {
@@ -105,43 +102,19 @@ namespace Tesselation
             //Found no level moves? Backtrace if there were many moves available, as it is likely that the problem was caused by the last piece placed
             Shape toremove;
             //Use normal backtracing to remove two areas if possible
-            if ((moves.Count > 30 || moves.Count <= 4 || AreaCount(board, width, height) >= 2) && adjacentshapes.Count == 0)
+            if (adjacentshapes.Count == 0 && (moves.Count > 30 || moves.Count <= 4 || AreaCount(board, width, height) >= 2))
             {
-                if (board.SequenceEqual(boardstate_atgeneration))
-                {
-                    //Backtracing failed at adjacentshapes[0]
-                    //remove it and try adjacentshapes[1]
-                    foreach (var tile in adjacentshapes[0].tiles) //place the tile back
-                    {
-                        boardstate_atgeneration[tile.x + adjacentshapes[0].placedposition.X + (tile.y + adjacentshapes[0].placedposition.Y) * width] = 1;
-                    }
-                    adjacentshapes.RemoveAt(0); //remove the tile from the list to search
-                    //Remove the next shape
-                    foreach (var tile in adjacentshapes[0].tiles) //place the tile back
-                    {
-                        boardstate_atgeneration[tile.x + adjacentshapes[0].placedposition.X + (tile.y + adjacentshapes[0].placedposition.Y) * width] = 0;
-                    }
-                }
-                toremove = placedshapes.Last();
-            }
-            else
-            {
-                if (adjacentshapes.Count == 0)
-                {
-                    //instead of backtracing, try to remove side pieces
-                    adjacentshapes = placedshapes.Where(shape => shape.touchingsquares.Any(touchingtile => 
-                    moves.Contains(new Point(shape.placedposition.X + touchingtile.X, shape.placedposition.Y + touchingtile.Y)))).ToList();
+                //instead of backtracing, try to remove side pieces
+                adjacentshapes = placedshapes.Where(shape => shape.touchingsquares.Any(touchingtile =>
+                moves.Contains(new Point(shape.placedposition.X + touchingtile.X, shape.placedposition.Y + touchingtile.Y)))).ToList();
 
-                    boardstate_atgeneration = new int[width * height];
-                    board.CopyTo(boardstate_atgeneration, 0);
-                }
-                toremove = adjacentshapes[0];
-                foreach (var tile in toremove.tiles)
+                foreach (var shape in adjacentshapes)
                 {
-                    boardstate_atgeneration[tile.x + toremove.placedposition.X + (tile.y + toremove.placedposition.Y) * width] = 0;
+                    placedshapes.Remove(shape);
+                    placedshapes.Add(shape); //Push to end of list;
                 }
-
             }
+            toremove = placedshapes.Last();
 
             potentialmoves.Clear();
             potentialmoves.Add(new MoveData(toremove, 0, false));

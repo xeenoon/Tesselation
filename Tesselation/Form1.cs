@@ -86,6 +86,8 @@ namespace Tesselation
                         {
                             mapFiller.board[tile.x + bestmove.shape.placedposition.X + (tile.y + bestmove.shape.placedposition.Y) * mapFiller.width] = 1;
                         }
+                        DebugDump(bestmove, mapFiller);
+
                         mapFiller.placedshapes.Add(bestmove.shape);
                     }
                 }
@@ -103,13 +105,45 @@ namespace Tesselation
                         //wait for paint to finish
                     }
                 }
-                //Thread.Sleep(100);
+                Thread.Sleep(100);
                 if (mapFiller.board.All(i=>i==1))
                 {
                     canvas.Invalidate();
                     return; //issolved
                 }
             }
+        }
+
+        private void DebugDump(MoveData bestmove, MapFiller mapfiller)
+        {
+            string dumpfile = @"C:\Users\ccw10\Downloads\debugdump.txt";
+            var existingdump = File.ReadAllText(dumpfile);            
+
+            existingdump += "{" + ArryStr(mapfiller.board) + ":[";
+            foreach (var board in mapfiller.blacklistedboards)
+            {
+                existingdump += ArryStr(board) + ",";
+            }
+            existingdump += "]}\n";
+            File.WriteAllText(dumpfile, existingdump);
+        }
+
+        public string ArryStr(int[] board)
+        {
+            string result = "";
+            for (int i = 0; i < board.Count(); i += 4)
+            {
+                string binary = "";
+                for (int j = 0; j < 4; ++j)
+                {
+                    binary += board[i + j].ToString();
+                }
+
+                string hex = String.Format("{0:X2}", Convert.ToUInt64(binary, 2));
+
+                result += hex;
+            }
+            return result;
         }
         private void UpdateAILabel(int milliseconds, int moves)
         {
@@ -123,8 +157,8 @@ namespace Tesselation
             }
         }
 
-        public static int horizontalsquares = 20;
-        public static int verticalsquares = 20;
+        public static int horizontalsquares = 10;
+        public static int verticalsquares = 10;
 
         public List<TilePlacer> tilePlacers = new List<TilePlacer>();
         public List<Shape> placedshapes = new List<Shape>();
