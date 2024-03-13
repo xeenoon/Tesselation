@@ -7,14 +7,15 @@ namespace Tesselation
 {
     public unsafe partial class MainForm : Form
     {
-        [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         static extern int memcpy(byte* b1, byte* b2, long count);
+        public static extern unsafe IntPtr memset(void* dest, int c, int count);
         public static extern int memcmp(byte[] b1, byte[] b2, long count);
         static extern IntPtr memcpy(IntPtr dest, IntPtr src, int count);
 
 
-        public static int horizontalsquares = 8;
-        public static int verticalsquares = 8;
+        public static int horizontalsquares = 15;
+        public static int verticalsquares = 10;
 
         public static MainForm instance;
         public static SplitContainer menusplit;
@@ -76,7 +77,6 @@ namespace Tesselation
             {
                 ++iterations;
                 var moves = mapFiller.GenerateMoves();
-                DebugDump(mapFiller);
                 if (!(moves is null))
                 {
                     if (moves.Count == 1 && !moves[0].isplacing)
@@ -125,12 +125,15 @@ namespace Tesselation
                         //wait for paint to finish
                     }
                 }
-                //Thread.Sleep(100);
-                int mapsize = (mapFiller.board.width * mapFiller.board.height) / 8;
-                byte* temp = (byte*)Marshal.AllocHGlobal(mapsize);
-                byte ff = 0xff;
-                memcpy(temp, &ff, mapsize);
-                if (mapFiller.board.IsEqual(temp, mapsize)) //Fast way to check if board is full
+                Board full = new Board(mapFiller.board.width, mapFiller.board.height);
+                for (int x = 0; x < full.width; ++x)
+                {
+                    for (int y = 0; y < full.height; ++y)
+                    {
+                        full.SetBit(x,y);
+                    }
+                }
+                if (mapFiller.board.IsEqual(full)) //Fast way to check if board is full
                 {
                     canvas.Invalidate();
                     return; //issolved
@@ -142,21 +145,13 @@ namespace Tesselation
 
         private void DebugDump(MapFiller mapfiller)
         {
-            var existingdump = File.ReadAllText(dumpfile);            
-
-            existingdump += "{" + ByteArrayToHexString(mapfiller.board.data, mapfiller.board.size) + ":[";
+            var towrite = "{" + mapfiller.board.ToString() + ":[";
             foreach (var board in mapfiller.blacklistedboards)
             {
-                existingdump += ByteArrayToHexString(board.data, board.size) + ",";
+                towrite += board.ToString() + ",";
             }
-            existingdump += "]}\n";
-            File.WriteAllText(dumpfile, existingdump);
-        }
-        unsafe static string ByteArrayToHexString(byte* byteArray, int length)
-        {
-            byte[] tempArray = new byte[length];
-            Marshal.Copy((IntPtr)byteArray, tempArray, 0, length);
-            return BitConverter.ToString(tempArray).Replace("-", "");
+            towrite += "]}\n";
+            File.AppendAllText(dumpfile, towrite);
         }
         public string ArryStr(int[] board)
         {

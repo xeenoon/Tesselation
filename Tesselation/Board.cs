@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -73,18 +74,36 @@ namespace Tesselation
             for (int i = 0; i < length; i++) //Inefficient, import memcpm from C
             {
                 if (*(data + i) != *(ptr2 + i))
+                {
                     return false;
+                }
             }
             return true;
         }
-        public unsafe bool IsEqual(Board board, int length)
+        public unsafe bool IsEqual(Board board)
         {
-            for (int i = 0; i < length; i++) //Inefficient, import memcpm from C
+            string me = ToString();
+            string other = board.ToString();
+            if (me == other)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+            /*for (int i = 0; i < length; i++) //Inefficient, import memcpm from C
             {
                 if (*(data + i) != *(board.data + i))
                     return false;
             }
-            return true;
+            return true;*/
+        }
+        public string ToString()
+        {
+            byte[] tempArray = new byte[size];
+            Marshal.Copy((IntPtr)data, tempArray, 0, size);
+            return BitConverter.ToString(tempArray).Replace("-", "");
         }
     }
 }

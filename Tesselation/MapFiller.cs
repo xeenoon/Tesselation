@@ -68,11 +68,11 @@ namespace Tesselation
 
         public List<MoveData> GenerateMoves()
         {
-            var precalcmoves = visitedboards.FirstOrDefault(bm => bm.board.IsEqual(board, board.size));
+            /*var precalcmoves = visitedboards.FirstOrDefault(bm => bm.board.IsEqual(board, board.size));
             if (!(precalcmoves is null))
             {
                 return precalcmoves.moves;
-            }
+            }*/
             debugtimer.Restart();
             List<MoveData> potentialmoves = new List<MoveData>();
             var moves = FindEmptyArea(board, width, height);
@@ -108,7 +108,7 @@ namespace Tesselation
                             {
                                 board.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
                             }
-                            if (!blacklistedboards.Any(b =>  b.IsEqual(board.data, board.size)))
+                            if (!blacklistedboards.Any(b => b.IsEqual(board)))
                             {
                                 int touchingsquares = FindTouchingSquares(shape, placedposition);
                                 potentialmoves.Add(new MoveData(copy, touchingsquares, true));
@@ -154,15 +154,14 @@ namespace Tesselation
             memcpy(boardcopy.data, board.data, board.size);
             blacklistedboards.Add(boardcopy);
 
-            byte* boardsoftcopy = (byte*)Marshal.AllocHGlobal(board.size);
-            memcpy(boardsoftcopy, board.data, board.size);
+            Board boardsoftcopy = new Board(width, height);
+            memcpy(boardsoftcopy.data, board.data, board.size);
 
             foreach (var tile in toremove.data.tiles)
             {
-                boardsoftcopy[tile.x + toremove.data.location.X + (tile.y + toremove.data.location.Y) * width] = 0;
+                boardsoftcopy.ClearBit(tile.x + toremove.data.location.X ,tile.y + toremove.data.location.Y);
             }
-            visitedboards.RemoveAll(v => v.board.IsEqual(boardsoftcopy, board.size));
-            Marshal.FreeHGlobal((nint)boardsoftcopy);
+            visitedboards.RemoveAll(v => v.board.IsEqual(boardsoftcopy));
             debugtimer.Stop();
             backtracetime += debugtimer.ElapsedTicks;
             return potentialmoves;
