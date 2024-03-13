@@ -14,8 +14,8 @@ namespace Tesselation
         static extern IntPtr memcpy(IntPtr dest, IntPtr src, int count);
 
 
-        public static int horizontalsquares = 100;
-        public static int verticalsquares = 100;
+        public static int horizontalsquares = 20;
+        public static int verticalsquares = 20;
 
         public static MainForm instance;
         public static SplitContainer menusplit;
@@ -113,9 +113,9 @@ namespace Tesselation
                 }
 
                 DebugDump(mapFiller);
-
+                //Thread.Sleep(100);
                 paintfinished = false;
-                const int rendermiliseconds = 500;
+                const int rendermiliseconds = 20;
                 movesperrender++;
                 if (s.ElapsedMilliseconds > rendermiliseconds)
                 {
