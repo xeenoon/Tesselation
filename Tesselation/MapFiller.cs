@@ -101,21 +101,18 @@ namespace Tesselation
                             var copy = shape.PlaceData(placedposition);
                             debugtimer.Restart();
                             var tempcopy = new Board(board);
-                            foreach (var tile in shape.data.tiles)
+                            foreach (var tile in copy.tiles)
                             {
                                 tempcopy.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
                             }
                             debugtimer.Stop();
                             boardresettime += debugtimer.ElapsedTicks;
                             debugtimer.Restart();
+                            int touchingsquares = FindTouchingSquares(shape, placedposition);
 
-                            if (!blacklistedboards.Any(b => b.IsEqual(tempcopy)))
+                            if (touchingsquares >= 1 && !blacklistedboards.Any(b => b.IsEqual(tempcopy)))
                             {
-                                int touchingsquares = FindTouchingSquares(shape, placedposition);
-                                if (touchingsquares >= 1)
-                                {
-                                    potentialmoves.Add(new MoveData(copy, touchingsquares, true));
-                                }
+                                potentialmoves.Add(new MoveData(copy, touchingsquares, true));
                             }
                             debugtimer.Stop();
                             blacklisttesttime += debugtimer.ElapsedTicks;
