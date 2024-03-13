@@ -214,13 +214,28 @@ namespace Tesselation
         private int FindTouchingSquares(Shape copy, Point position)
         {
             int result = 0;
+            bool[] visited = new bool[width * height];
             foreach (var point in copy.data.touchingsquares)
             {
+                int persquareresard = 1; //Reward AI for having one tile connect to more other tiles
                 int x = point.X + position.X;
                 int y = point.Y + position.Y;
                 if (x >= width || y>=height || x < 0 || y < 0 || board.GetData(x,y))
                 {
-                    ++result;
+                    result += persquareresard;
+                    ++persquareresard;
+                }
+                else
+                {
+                    continue;
+                    //Do a mini DFS to find if there is a nearby area that is smaller than 4
+                    List<Point> emptyArea = new List<Point>();
+                    DFS(board, x, y, width, height, visited, emptyArea, 3);
+                    if (emptyArea.Count >= 1 && emptyArea.Count <= 3) 
+                        //Too small to place a piece?
+                    {
+                        return 0;
+                    }
                 }
             }
             return result;
@@ -285,8 +300,12 @@ namespace Tesselation
 
             return areacount;
         }
-        static void DFS(Board board, int startX, int startY, int width, int height, bool[] visited, List<Point> emptyArea)
+        static void DFS(Board board, int startX, int startY, int width, int height, bool[] visited, List<Point> emptyArea, int distancelimit = int.MaxValue)
         {
+            if (visited[startX + startY*width])
+            {
+                return;
+            }
             Stack<Point> stack = new Stack<Point>();
             stack.Push(new Point(startX, startY));
 
@@ -296,7 +315,8 @@ namespace Tesselation
                 int x = current.X;
                 int y = current.Y;
 
-                if (x < 0 || x >= width || y < 0 || y >= height || visited[x + y * width] || board.GetData(x, y) == true)
+                if (x < 0 || x >= width || y < 0 || y >= height || visited[x + y * width] || board.GetData(x, y) == true ||
+                    Math.Abs(startX-x) >= distancelimit || Math.Abs(startY-y) >= distancelimit)
                 {
                     continue;
                 }
