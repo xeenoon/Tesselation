@@ -68,11 +68,11 @@ namespace Tesselation
 
         public List<MoveData> GenerateMoves()
         {
-            /*var precalcmoves = visitedboards.FirstOrDefault(bm => bm.board.IsEqual(board, board.size));
+            var precalcmoves = visitedboards.FirstOrDefault(bm => bm.board.IsEqual(board));
             if (!(precalcmoves is null))
             {
                 return precalcmoves.moves;
-            }*/
+            }
             debugtimer.Restart();
             List<MoveData> potentialmoves = new List<MoveData>();
             var moves = FindEmptyArea(board, width, height);
@@ -127,6 +127,10 @@ namespace Tesselation
                 if (potentialmoves.Count >= 1)
                 {
                     memcpy(boardcopy.data, board.data, board.size);
+                    if (visitedboards.Count >= 10)
+                    {
+                        visitedboards.RemoveAt(0); //Avoid memory issues
+                    }
                     visitedboards.Add(new BoardMoves(boardcopy, potentialmoves));
                     return potentialmoves;
                 }

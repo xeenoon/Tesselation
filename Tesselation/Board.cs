@@ -82,22 +82,12 @@ namespace Tesselation
         }
         public unsafe bool IsEqual(Board board)
         {
-            string me = ToString();
-            string other = board.ToString();
-            if (me == other)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-            /*for (int i = 0; i < length; i++) //Inefficient, import memcpm from C
+            for (int i = 0; i < size; i++) //Inefficient, import memcpm from C
             {
                 if (*(data + i) != *(board.data + i))
                     return false;
             }
-            return true;*/
+            return true;
         }
         public string ToString()
         {

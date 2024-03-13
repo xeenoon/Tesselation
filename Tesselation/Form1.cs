@@ -14,8 +14,8 @@ namespace Tesselation
         static extern IntPtr memcpy(IntPtr dest, IntPtr src, int count);
 
 
-        public static int horizontalsquares = 100;
-        public static int verticalsquares = 100;
+        public static int horizontalsquares = 50;
+        public static int verticalsquares = 50;
 
         public static MainForm instance;
         public static SplitContainer menusplit;
