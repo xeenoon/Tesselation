@@ -34,6 +34,14 @@ namespace Tesselation
             GC.SuppressFinalize(this);
             memset((nint)data, 0, size);
         }
+        public Board(Board tocopy)
+        {
+            this.width = tocopy.width;
+            this.height = tocopy.height;
+            this.size = (width * height) / 8 + ((width * height) % 8 != 0 ? 1 : 0);
+            data = (byte*)Marshal.AllocHGlobal(size);
+            memcpy((nint)data, (nint)tocopy.data, (nuint)size);
+        }
         public void Dispose()
         {
             Marshal.FreeHGlobal((nint)data);

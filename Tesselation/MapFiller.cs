@@ -61,10 +61,10 @@ namespace Tesselation
             return dp[targetSum];
         }
         Stopwatch debugtimer = new Stopwatch();
-        public long emptyareatime;
+        public long boardresettime;
         public long cansumtotargettime;
         public long blacklisttesttime;
-        public long backtracetime;
+        public long canplacetime;
 
         public List<MoveData> GenerateMoves()
         {
@@ -73,11 +73,8 @@ namespace Tesselation
             {
                 return precalcmoves.moves;
             }
-            debugtimer.Restart();
             List<MoveData> potentialmoves = new List<MoveData>();
             var moves = FindEmptyArea(board, width, height);
-            debugtimer.Stop();
-            emptyareatime += debugtimer.ElapsedTicks;
             Random r = new Random();
             Board boardcopy = new Board(width, height);
 
@@ -99,15 +96,22 @@ namespace Tesselation
                         bool canplace = !shape.data.tiles.Any(t => t.x + placedposition.X >= width ||
                                                              t.y + placedposition.Y >= height ||
                                                              board.GetData(t.x + placedposition.X, (t.y + placedposition.Y)) == true);
+                        debugtimer.Stop();
+                        canplacetime += debugtimer.ElapsedTicks;
+
                         if (canplace)
                         {
                             //place the piece
                             var copy = shape.PlaceData(placedposition);
-
+                            debugtimer.Restart();
                             foreach (var tile in shape.data.tiles)
                             {
                                 board.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
                             }
+                            debugtimer.Stop();
+                            boardresettime += debugtimer.ElapsedTicks;
+                            debugtimer.Restart();
+
                             if (!blacklistedboards.Any(b => b.IsEqual(board)))
                             {
                                 int touchingsquares = FindTouchingSquares(shape, placedposition);
@@ -116,15 +120,19 @@ namespace Tesselation
                                     potentialmoves.Add(new MoveData(copy, touchingsquares, true));
                                 }
                             }
+                            debugtimer.Stop();
+                            blacklisttesttime += debugtimer.ElapsedTicks;
+
+                            debugtimer.Start();
+
                             foreach (var tile in shape.data.tiles)
                             {
                                 board.ClearBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
                             } //faster to operate on board rather than copying board
-
+                            debugtimer.Stop();
+                            boardresettime += debugtimer.ElapsedTicks;
                         }
 
-                        debugtimer.Stop();
-                        blacklisttesttime += debugtimer.ElapsedTicks;
                     }
                 }
                 if (potentialmoves.Count >= 1)
@@ -138,7 +146,6 @@ namespace Tesselation
                     return potentialmoves;
                 }
             }
-            debugtimer.Start();
             //Found no legal moves? Backtrace if there were many moves available, as it is likely that the problem was caused by the last piece placed
             Shape toremove;
             //Use normal backtracing to remove two areas if possible
@@ -169,8 +176,6 @@ namespace Tesselation
                 boardsoftcopy.ClearBit(tile.x + toremove.data.location.X ,tile.y + toremove.data.location.Y);
             }
             visitedboards.RemoveAll(v => v.board.IsEqual(boardsoftcopy));
-            debugtimer.Stop();
-            backtracetime += debugtimer.ElapsedTicks;
             return potentialmoves;
         }
 

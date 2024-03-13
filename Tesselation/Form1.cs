@@ -184,16 +184,16 @@ namespace Tesselation
             }
             else
             {
-                double emptyareams = mapFiller.emptyareatime / (double)10000;
+                double boardresettimems = mapFiller.boardresettime / (double)10000;
                 double cansumtotargetms = mapFiller.cansumtotargettime / (double)10000;
                 double blacklisttestms = mapFiller.blacklisttesttime / (double)10000;
-                double backtracems = mapFiller.backtracetime / (double)10000;
+                double canplacems = mapFiller.canplacetime / (double)10000;
 
-                label1.Text = $"Totaltime:{milis}\nemptyareatime:{emptyareams}\ncansumtotargettime:{cansumtotargetms}\nblacklisttesttime:{blacklisttestms}\nbacktracetime:{backtracems}";
-                mapFiller.emptyareatime = 0;
+                label1.Text = $"Totaltime:{milis}\nboardresettime:{boardresettimems}\ncansumtotargettime:{cansumtotargetms}\nblacklisttesttime:{blacklisttestms}\ncanplacetime:{canplacems}";
+                mapFiller.boardresettime = 0;
                 mapFiller.cansumtotargettime = 0;
                 mapFiller.blacklisttesttime = 0;
-                mapFiller.backtracetime = 0;
+                mapFiller.canplacetime = 0;
             }
         }
 
