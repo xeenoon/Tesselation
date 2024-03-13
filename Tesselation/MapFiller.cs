@@ -62,7 +62,6 @@ namespace Tesselation
         }
         Stopwatch debugtimer = new Stopwatch();
         public long boardresettime;
-        public long cansumtotargettime;
         public long blacklisttesttime;
         public long canplacetime;
 
@@ -78,10 +77,7 @@ namespace Tesselation
             Random r = new Random();
             Board boardcopy = new Board(width, height);
 
-            debugtimer.Restart();
             bool cansum = CanSumToTarget(potentialshapes.Select(s => s.data.tiles.Count).Distinct().ToArray(), moves.Count);
-            debugtimer.Stop();
-            cansumtotargettime += debugtimer.ElapsedTicks;
 
             if ((moves.Count > 50) || cansum)
             {
@@ -104,15 +100,16 @@ namespace Tesselation
                             //place the piece
                             var copy = shape.PlaceData(placedposition);
                             debugtimer.Restart();
+                            var tempcopy = new Board(board);
                             foreach (var tile in shape.data.tiles)
                             {
-                                board.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
+                                tempcopy.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
                             }
                             debugtimer.Stop();
                             boardresettime += debugtimer.ElapsedTicks;
                             debugtimer.Restart();
 
-                            if (!blacklistedboards.Any(b => b.IsEqual(board)))
+                            if (!blacklistedboards.Any(b => b.IsEqual(tempcopy)))
                             {
                                 int touchingsquares = FindTouchingSquares(shape, placedposition);
                                 if (touchingsquares >= 1)
@@ -122,15 +119,7 @@ namespace Tesselation
                             }
                             debugtimer.Stop();
                             blacklisttesttime += debugtimer.ElapsedTicks;
-
-                            debugtimer.Start();
-
-                            foreach (var tile in shape.data.tiles)
-                            {
-                                board.ClearBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
-                            } //faster to operate on board rather than copying board
-                            debugtimer.Stop();
-                            boardresettime += debugtimer.ElapsedTicks;
+                            tempcopy.Dispose();
                         }
 
                     }

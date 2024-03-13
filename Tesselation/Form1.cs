@@ -109,7 +109,7 @@ namespace Tesselation
                 }
                 if (iterations > 1000)
                 {
-                    MessageBox.Show(totalmiliseconds.ToString());
+                    //MessageBox.Show(totalmiliseconds.ToString());
                 }
 
                 DebugDump(mapFiller);
@@ -185,13 +185,11 @@ namespace Tesselation
             else
             {
                 double boardresettimems = mapFiller.boardresettime / (double)10000;
-                double cansumtotargetms = mapFiller.cansumtotargettime / (double)10000;
                 double blacklisttestms = mapFiller.blacklisttesttime / (double)10000;
                 double canplacems = mapFiller.canplacetime / (double)10000;
 
-                label1.Text = $"Totaltime:{milis}\nboardresettime:{boardresettimems}\ncansumtotargettime:{cansumtotargetms}\nblacklisttesttime:{blacklisttestms}\ncanplacetime:{canplacems}";
+                label1.Text = $"Totaltime:{milis}\nboardresettime:{boardresettimems}\nblacklisttesttime:{blacklisttestms}\ncanplacetime:{canplacems}";
                 mapFiller.boardresettime = 0;
-                mapFiller.cansumtotargettime = 0;
                 mapFiller.blacklisttesttime = 0;
                 mapFiller.canplacetime = 0;
             }
