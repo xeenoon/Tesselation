@@ -14,8 +14,7 @@ namespace Tesselation
     public unsafe class MapFiller
     {
         [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern int memcpy(byte* b1, byte* b2, long count);
-        static extern int memcpy(byte* b1, byte b2, long count);
+        static extern int memcpy(byte* dest, byte* src, long count);
         public static extern IntPtr memcpy(IntPtr dest, IntPtr src, UIntPtr count);
 
 
@@ -69,7 +68,7 @@ namespace Tesselation
 
         public List<MoveData> GenerateMoves()
         {
-            var precalcmoves = visitedboards.FirstOrDefault(bm => memcpy(bm.board.data, board.data, board.size) == 1);
+            var precalcmoves = visitedboards.FirstOrDefault(bm => bm.board.IsEqual(board, board.size));
             if (!(precalcmoves is null))
             {
                 return precalcmoves.moves;
@@ -99,7 +98,7 @@ namespace Tesselation
                         debugtimer.Restart();
                         bool canplace = !shape.data.tiles.Any(t => t.x + placedposition.X >= width ||
                                                              t.y + placedposition.Y >= height ||
-                                                             board.GetData(t.x + placedposition.X, (t.y + placedposition.Y) * width) == true);
+                                                             board.GetData(t.x + placedposition.X, (t.y + placedposition.Y)) == true);
                         if (canplace)
                         {
                             //place the piece
@@ -109,7 +108,7 @@ namespace Tesselation
                             {
                                 board.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
                             }
-                            if (!blacklistedboards.Any(b => memcpy(b.data, board.data, board.size) == 1))
+                            if (!blacklistedboards.Any(b =>  b.IsEqual(board.data, board.size)))
                             {
                                 int touchingsquares = FindTouchingSquares(shape, placedposition);
                                 potentialmoves.Add(new MoveData(copy, touchingsquares, true));
@@ -162,7 +161,7 @@ namespace Tesselation
             {
                 boardsoftcopy[tile.x + toremove.data.location.X + (tile.y + toremove.data.location.Y) * width] = 0;
             }
-            visitedboards.RemoveAll(v => memcpy(v.board.data, boardsoftcopy, board.size) == 1);
+            visitedboards.RemoveAll(v => v.board.IsEqual(boardsoftcopy, board.size));
             Marshal.FreeHGlobal((nint)boardsoftcopy);
             debugtimer.Stop();
             backtracetime += debugtimer.ElapsedTicks;
@@ -249,12 +248,12 @@ namespace Tesselation
         }
         static void DFS(Board board, int x, int y, int width, int height, bool[] visited, List<Point> emptyArea)
         {
-            if (x < 0 || x >= width || y < 0 || y >= height || visited[x + y*width] || board.GetData(x, y) == true)
+            if (x < 0 || x >= width || y < 0 || y >= height || visited[x + y * width] || board.GetData(x, y) == true)
             {
                 return;
             }
 
-            visited[x + y*width] = true;
+            visited[x + y * width] = true;
             emptyArea.Add(new Point(x, y));
 
             DFS(board, x + 1, y, width, height, visited, emptyArea);

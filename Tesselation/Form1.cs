@@ -9,11 +9,12 @@ namespace Tesselation
     {
         [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl)]
         static extern int memcpy(byte* b1, byte* b2, long count);
-        static extern int memcpy(byte* b1, byte b2, long count);
+        public static extern int memcmp(byte[] b1, byte[] b2, long count);
+        static extern IntPtr memcpy(IntPtr dest, IntPtr src, int count);
 
 
-        public static int horizontalsquares = 100;
-        public static int verticalsquares = 100;
+        public static int horizontalsquares = 8;
+        public static int verticalsquares = 8;
 
         public static MainForm instance;
         public static SplitContainer menusplit;
@@ -66,6 +67,7 @@ namespace Tesselation
 
         public void AIMove(object sender, EventArgs e)
         {
+            DebugDump(mapFiller);
             int iterations = 0;
             Stopwatch s = new Stopwatch();
             s.Start();
@@ -74,6 +76,7 @@ namespace Tesselation
             {
                 ++iterations;
                 var moves = mapFiller.GenerateMoves();
+                DebugDump(mapFiller);
                 if (!(moves is null))
                 {
                     if (moves.Count == 1 && !moves[0].isplacing)
@@ -100,11 +103,12 @@ namespace Tesselation
                         {
                             mapFiller.board.SetBit(tile.x + bestmove.shape.location.X, (tile.y + bestmove.shape.location.Y));
                         }
-                        //DebugDump(bestmove, mapFiller);
 
                         mapFiller.placedshapes.Add(new Shape(bestmove.shape));
                     }
                 }
+                DebugDump(mapFiller);
+
                 paintfinished = false;
                 const int rendermiliseconds = 30;
                 movesperrender++;
@@ -124,28 +128,36 @@ namespace Tesselation
                 //Thread.Sleep(100);
                 int mapsize = (mapFiller.board.width * mapFiller.board.height) / 8;
                 byte* temp = (byte*)Marshal.AllocHGlobal(mapsize);
-                memcpy(temp, (byte)0xff, mapsize);
-                if (memcpy(mapFiller.board.data, temp, mapsize) == 0) //Fast way to check if board is full
+                byte ff = 0xff;
+                memcpy(temp, &ff, mapsize);
+                if (mapFiller.board.IsEqual(temp, mapsize)) //Fast way to check if board is full
                 {
                     canvas.Invalidate();
                     return; //issolved
                 }
             }
         }
+
         const string dumpfile = @"C:\Users\ccw10\Downloads\debugdump.txt";
 
-        /*private void DebugDump(MoveData bestmove, MapFiller mapfiller)
+        private void DebugDump(MapFiller mapfiller)
         {
             var existingdump = File.ReadAllText(dumpfile);            
 
-            existingdump += "{" + ArryStr(mapfiller.board) + ":[";
+            existingdump += "{" + ByteArrayToHexString(mapfiller.board.data, mapfiller.board.size) + ":[";
             foreach (var board in mapfiller.blacklistedboards)
             {
-                existingdump += ArryStr(board) + ",";
+                existingdump += ByteArrayToHexString(board.data, board.size) + ",";
             }
             existingdump += "]}\n";
             File.WriteAllText(dumpfile, existingdump);
-        }*/
+        }
+        unsafe static string ByteArrayToHexString(byte* byteArray, int length)
+        {
+            byte[] tempArray = new byte[length];
+            Marshal.Copy((IntPtr)byteArray, tempArray, 0, length);
+            return BitConverter.ToString(tempArray).Replace("-", "");
+        }
         public string ArryStr(int[] board)
         {
             string result = "";

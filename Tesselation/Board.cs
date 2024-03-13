@@ -7,8 +7,14 @@ using System.Threading.Tasks;
 
 namespace Tesselation
 {
-    public unsafe class Board
+    public unsafe struct Board : IDisposable
     {
+        [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
+        public static extern IntPtr memcpy(IntPtr dest, IntPtr src, UIntPtr count);
+        [DllImport("msvcrt.dll", EntryPoint = "memset", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
+        public static extern IntPtr memset(IntPtr dest, byte c, int count);
+
+
         public byte* data;
         public int width;
         public int height;
@@ -20,14 +26,33 @@ namespace Tesselation
             this.height = height;
             size = (width * height) / 8 + ((width * height) % 8 != 0 ? 1 : 0);
             data = (byte*)Marshal.AllocHGlobal(size);
+            GC.SuppressFinalize(this);
+            memset((nint)data, 0, size);
+        }
+        public void Dispose()
+        {
+            Marshal.FreeHGlobal((nint)data);
         }
 
         public bool GetData(int x, int y)
         {
+            if (x < 0 || x >= width || y < 0 || y >= height)
+            {
+                return false;
+            }
+
             int idx = x + y * width;
             int byteidx = idx / 8;
             int bitoffset = idx % 8;
-            return (data[byteidx] & ((byte)1 << bitoffset)) == (byte)1<<bitoffset;
+
+            // Ensure byteidx is within the bounds
+            if (byteidx < 0 || byteidx >= size)
+            {
+                return false;
+            }
+
+            // Check the bit at the specified offset
+            return (data[byteidx] & (1 << bitoffset)) != 0;
         }
         public void SetBit(int x, int y)
         {
@@ -42,6 +67,24 @@ namespace Tesselation
             int byteidx = idx / 8;
             int bitoffset = idx % 8;
             data[byteidx] = (byte)(data[byteidx] & (byte)(byte.MaxValue ^ ((byte)1 << bitoffset)));
+        }
+        public unsafe bool IsEqual(byte* ptr2, int length)
+        {
+            for (int i = 0; i < length; i++) //Inefficient, import memcpm from C
+            {
+                if (*(data + i) != *(ptr2 + i))
+                    return false;
+            }
+            return true;
+        }
+        public unsafe bool IsEqual(Board board, int length)
+        {
+            for (int i = 0; i < length; i++) //Inefficient, import memcpm from C
+            {
+                if (*(data + i) != *(board.data + i))
+                    return false;
+            }
+            return true;
         }
     }
 }
