@@ -65,7 +65,7 @@ namespace Tesselation
         System.Timers.Timer AIMoveDelay = new System.Timers.Timer(1000);
         MapFiller mapFiller;
         bool paintfinished = false;
-
+        long totalmiliseconds = 0;
         public void AIMove(object sender, EventArgs e)
         {
             DebugDump(mapFiller);
@@ -107,6 +107,11 @@ namespace Tesselation
                         mapFiller.placedshapes.Add(new Shape(bestmove.shape));
                     }
                 }
+                if (iterations > 1000)
+                {
+                    MessageBox.Show(totalmiliseconds.ToString());
+                }
+
                 DebugDump(mapFiller);
 
                 paintfinished = false;
@@ -114,6 +119,7 @@ namespace Tesselation
                 movesperrender++;
                 if (s.ElapsedMilliseconds > rendermiliseconds)
                 {
+                    totalmiliseconds += s.ElapsedMilliseconds;
                     s.Stop();
                     UpdateAILabel((int)s.ElapsedMilliseconds, movesperrender);
                     s.Restart();

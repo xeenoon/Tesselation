@@ -12,8 +12,12 @@ namespace Tesselation
     {
         [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memcpy(IntPtr dest, IntPtr src, UIntPtr count);
+
         [DllImport("msvcrt.dll", EntryPoint = "memset", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memset(IntPtr dest, byte c, int count);
+        [DllImport("memcmplibrary2.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern bool IsEqual(IntPtr ptr1, IntPtr ptr2, int length); //inequal
+
 
 
         public byte* data;
@@ -69,25 +73,13 @@ namespace Tesselation
             int bitoffset = idx % 8;
             data[byteidx] = (byte)(data[byteidx] & (byte)(byte.MaxValue ^ ((byte)1 << bitoffset)));
         }
-        public unsafe bool IsEqual(byte* ptr2, int length)
+        public unsafe bool IsEqual(byte* ptr2)
         {
-            for (int i = 0; i < length; i++) //Inefficient, import memcpm from C
-            {
-                if (*(data + i) != *(ptr2 + i))
-                {
-                    return false;
-                }
-            }
-            return true;
+            return !IsEqual((nint)data, (nint)ptr2, size);
         }
         public unsafe bool IsEqual(Board board)
-        {
-            for (int i = 0; i < size; i++) //Inefficient, import memcpm from C
-            {
-                if (*(data + i) != *(board.data + i))
-                    return false;
-            }
-            return true;
+        { 
+            return !IsEqual((nint)data, (nint)board.data, size);
         }
         public string ToString()
         {

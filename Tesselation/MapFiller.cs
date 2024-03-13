@@ -111,7 +111,10 @@ namespace Tesselation
                             if (!blacklistedboards.Any(b => b.IsEqual(board)))
                             {
                                 int touchingsquares = FindTouchingSquares(shape, placedposition);
-                                potentialmoves.Add(new MoveData(copy, touchingsquares, true));
+                                if (touchingsquares >= 1)
+                                {
+                                    potentialmoves.Add(new MoveData(copy, touchingsquares, true));
+                                }
                             }
                             foreach (var tile in shape.data.tiles)
                             {
