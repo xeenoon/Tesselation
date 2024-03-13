@@ -245,21 +245,33 @@ namespace Tesselation
 
             return areacount;
         }
-        static void DFS(Board board, int x, int y, int width, int height, bool[] visited, List<Point> emptyArea)
+        static void DFS(Board board, int startX, int startY, int width, int height, bool[] visited, List<Point> emptyArea)
         {
-            if (x < 0 || x >= width || y < 0 || y >= height || visited[x + y * width] || board.GetData(x, y) == true)
+            Stack<Point> stack = new Stack<Point>();
+            stack.Push(new Point(startX, startY));
+
+            while (stack.Count > 0)
             {
-                return;
+                Point current = stack.Pop();
+                int x = current.X;
+                int y = current.Y;
+
+                if (x < 0 || x >= width || y < 0 || y >= height || visited[x + y * width] || board.GetData(x, y) == true)
+                {
+                    continue;
+                }
+
+                visited[x + y * width] = true;
+                emptyArea.Add(new Point(x, y));
+
+                // Push neighboring cells onto the stack
+                stack.Push(new Point(x + 1, y));
+                stack.Push(new Point(x - 1, y));
+                stack.Push(new Point(x, y + 1));
+                stack.Push(new Point(x, y - 1));
             }
-
-            visited[x + y * width] = true;
-            emptyArea.Add(new Point(x, y));
-
-            DFS(board, x + 1, y, width, height, visited, emptyArea);
-            DFS(board, x - 1, y, width, height, visited, emptyArea);
-            DFS(board, x, y + 1, width, height, visited, emptyArea);
-            DFS(board, x, y - 1, width, height, visited, emptyArea);
         }
+
     }
     public class MoveData
     {
