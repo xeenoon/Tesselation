@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Tesselation;
@@ -113,13 +115,26 @@ namespace Tesselation
                             boardresettime += debugtimer.ElapsedTicks;
                             debugtimer.Restart();
                             int touchingsquares = FindTouchingSquares(shape, placedposition, tempcopy);
+                            
 
-                            if (touchingsquares >= 1 && !blacklistedboards.Any(b => b.IsEqual(tempcopy)))
+
+                            if (touchingsquares >= 2 && !blacklistedboards.Any(b => b.IsEqual(tempcopy)))
                             {
                                 if (totalmoves.Count >= 50 || AreaCount(tempcopy, width, height) <= 1) 
                                     //Dont split up areas when solving at end
                                 {
-                                    potentialmoves.Add(new MoveData(copy, touchingsquares, true));
+                                    Point[] newarea = new Point[totalmoves.Count];
+                                    totalmoves.CopyTo(newarea);
+                                    foreach (var tile in copy.tiles)
+                                    {
+                                        int idx = Array.IndexOf(newarea, new Point(tile.x + placedposition.X + width * (tile.y + placedposition.Y)));
+                                        if (idx != -1)
+                                        {
+                                            newarea[idx] = new Point(-1,-1);
+                                        }
+                                    }
+                                    double thickness = ThinnessMetric(newarea);
+                                    potentialmoves.Add(new MoveData(copy, touchingsquares, true, 0));
                                 }
                             }
                             debugtimer.Stop();
@@ -143,7 +158,11 @@ namespace Tesselation
             //Found no legal moves? Backtrace if there were many moves available, as it is likely that the problem was caused by the last piece placed
             Shape toremove;
             //Use normal backtracing to remove two areas if possible
-            if (adjacentshapes.Count == 0 && (totalmoves.Count > 30 || totalmoves.Count <= 4 || AreaCount(board, width, height) >= 2))
+            if (totalmoves.Count > 20)
+            {
+                adjacentshapes.Clear();
+            }
+            else if (adjacentshapes.Count == 0)
             {
                 //instead of backtracing, try to remove side pieces
                 adjacentshapes = placedshapes.Where(shape => shape.data.touchingsquares.Any(touchingtile =>
@@ -158,7 +177,7 @@ namespace Tesselation
             toremove = placedshapes.Last();
 
             potentialmoves.Clear();
-            potentialmoves.Add(new MoveData(toremove.data, 0, false));
+            potentialmoves.Add(new MoveData(toremove.data, 0, false, 0));
             memcpy(boardcopy.data, board.data, board.size);
             blacklistedboards.Add(boardcopy);
 
@@ -223,7 +242,7 @@ namespace Tesselation
                 if (x >= width || y>=height || x < 0 || y < 0 || board.GetData(x,y))
                 {
                     result += persquareresard;
-                    ++persquareresard;
+                    persquareresard += 2;
                 }
                 else
                 {
@@ -330,19 +349,50 @@ namespace Tesselation
                 stack.Push(new Point(x, y - 1));
             }
         }
+        public double ThinnessMetric(Point[] tiles)
+        {
+            List<int> widths = new List<int>();
+            List<int> heights = new List<int>();
+            foreach (var tile in tiles)
+            {
+                if (tile.X == -1 || tile.Y ==  -1) //-1 is null flag
+                {
+                    continue;
+                }
+                int width = 0;
+                int x = tile.X;
+                while (tiles.Contains(new Point(x,tile.Y)))
+                {
+                    x++;
+                    width++;
+                }
+                widths.Add(width);
 
+                int height = 0;
+                int y = tile.Y;
+                while (tiles.Contains(new Point(tile.X, y)))
+                {
+                    y++;
+                    height++;
+                }
+                heights.Add(height);
+            }
+            return Math.Min(widths.Average(), heights.Average());
+        }
     }
     public class MoveData
     {
         public ShapeData shape;
         public int touchingborders;
         public bool isplacing;
+        public double areathickness;
 
-        public MoveData(ShapeData shape, int touchingborders, bool isplacing)
+        public MoveData(ShapeData shape, int touchingborders, bool isplacing, double areathickness)
         {
             this.shape = shape;
             this.touchingborders = touchingborders;
             this.isplacing = isplacing;
+            this.areathickness = areathickness;
         }
     }
     public class BoardMoves

@@ -93,7 +93,7 @@ namespace Tesselation
                     }
                     else
                     {
-                        var bestmove = moves.OrderByDescending(t => t.touchingborders).FirstOrDefault();
+                        var bestmove = moves.OrderByDescending(t => t.touchingborders).OrderByDescending(t=>t.areathickness).FirstOrDefault();
                         int squares = bestmove.touchingborders;
                         bestmove = moves.Where(m=>m.touchingborders >= squares).ToList().Shuffle().FirstOrDefault();
                         placedshapes.Add(new Shape(bestmove.shape));
