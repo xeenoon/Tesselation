@@ -112,7 +112,7 @@ namespace Tesselation
                             debugtimer.Stop();
                             boardresettime += debugtimer.ElapsedTicks;
                             debugtimer.Restart();
-                            int touchingsquares = FindTouchingSquares(shape, placedposition);
+                            int touchingsquares = FindTouchingSquares(shape, placedposition, tempcopy);
 
                             if (touchingsquares >= 1 && !blacklistedboards.Any(b => b.IsEqual(tempcopy)))
                             {
@@ -149,7 +149,7 @@ namespace Tesselation
                 adjacentshapes = placedshapes.Where(shape => shape.data.touchingsquares.Any(touchingtile =>
                 totalmoves.Contains(new Point(shape.data.location.X + touchingtile.X, shape.data.location.Y + touchingtile.Y)))).ToList();
 
-                foreach (var shape in adjacentshapes)
+                foreach (var shape in adjacentshapes.OrderBy(a=>a.data.location.X))
                 {
                     placedshapes.Remove(shape);
                     placedshapes.Add(shape); //Push to end of list;
@@ -211,7 +211,7 @@ namespace Tesselation
             return result.Distinct().ToList();
         }
 
-        private int FindTouchingSquares(Shape copy, Point position)
+        private int FindTouchingSquares(Shape copy, Point position, Board b)
         {
             int result = 0;
             bool[] visited = new bool[width * height];
@@ -227,10 +227,9 @@ namespace Tesselation
                 }
                 else
                 {
-                    continue;
                     //Do a mini DFS to find if there is a nearby area that is smaller than 4
                     List<Point> emptyArea = new List<Point>();
-                    DFS(board, x, y, width, height, visited, emptyArea, 3);
+                    DFS(b, x, y, width, height, visited, emptyArea, 3);
                     if (emptyArea.Count >= 1 && emptyArea.Count <= 3) 
                         //Too small to place a piece?
                     {

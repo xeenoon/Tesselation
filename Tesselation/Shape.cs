@@ -193,7 +193,7 @@ namespace Tesselation
             {
                 duplicate.touchingsquares.Add(new Point(tile.X, tile.Y));
             }
-            duplicate.color = this.data.color;
+            duplicate.color = data.color;
             return duplicate;
         }
 

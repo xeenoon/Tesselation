@@ -112,7 +112,7 @@ namespace Tesselation
                     //MessageBox.Show(totalmiliseconds.ToString());
                 }
 
-                DebugDump(mapFiller);
+                //DebugDump(mapFiller);
                 //Thread.Sleep(100);
                 paintfinished = false;
                 const int rendermiliseconds = 20;
