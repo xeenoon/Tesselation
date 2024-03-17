@@ -86,39 +86,42 @@ namespace Tesselation
 
                 foreach (var shape in shaperotations)
                 {
-                    foreach (var placedposition in moves)
+                    foreach (var emptysquare in moves)
                     {
-                        debugtimer.Restart();
-                        bool canplace = !shape.data.tiles.Any(t => t.x + placedposition.X >= width ||
-                                                             t.y + placedposition.Y >= height ||
-                                                             board.GetData(t.x + placedposition.X, (t.y + placedposition.Y)) == true);
-                        debugtimer.Stop();
-                        canplacetime += debugtimer.ElapsedTicks;
-
-                        if (canplace)
+                        foreach (var placeanchor in shape.data.tiles)
                         {
-                            //place the piece
-                            var copy = shape.PlaceData(placedposition);
                             debugtimer.Restart();
-                            var tempcopy = new Board(board);
-                            foreach (var tile in copy.tiles)
-                            {
-                                tempcopy.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
-                            }
+                            Point placedposition = new Point(emptysquare.X + placeanchor.x, emptysquare.Y + placeanchor.y);
+                            bool canplace = !shape.data.tiles.Any(t => t.x + placedposition.X >= width ||
+                                                                 t.y + placedposition.Y >= height ||
+                                                                 board.GetData(t.x + placedposition.X, (t.y + placedposition.Y)) == true);
                             debugtimer.Stop();
-                            boardresettime += debugtimer.ElapsedTicks;
-                            debugtimer.Restart();
-                            int touchingsquares = FindTouchingSquares(shape, placedposition);
+                            canplacetime += debugtimer.ElapsedTicks;
 
-                            if (touchingsquares >= 1 && !blacklistedboards.Any(b => b.IsEqual(tempcopy)))
+                            if (canplace)
                             {
-                                potentialmoves.Add(new MoveData(copy, touchingsquares, true));
+                                //place the piece
+                                var copy = shape.PlaceData(placedposition);
+                                debugtimer.Restart();
+                                var tempcopy = new Board(board);
+                                foreach (var tile in copy.tiles)
+                                {
+                                    tempcopy.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
+                                }
+                                debugtimer.Stop();
+                                boardresettime += debugtimer.ElapsedTicks;
+                                debugtimer.Restart();
+                                int touchingsquares = FindTouchingSquares(shape, placedposition);
+
+                                if (touchingsquares >= 1 && !blacklistedboards.Any(b => b.IsEqual(tempcopy)))
+                                {
+                                    potentialmoves.Add(new MoveData(copy, touchingsquares, true));
+                                }
+                                debugtimer.Stop();
+                                blacklisttesttime += debugtimer.ElapsedTicks;
+                                tempcopy.Dispose();
                             }
-                            debugtimer.Stop();
-                            blacklisttesttime += debugtimer.ElapsedTicks;
-                            tempcopy.Dispose();
                         }
-
                     }
                 }
                 if (potentialmoves.Count >= 1)
