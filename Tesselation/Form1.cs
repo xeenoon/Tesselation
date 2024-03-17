@@ -115,11 +115,7 @@ namespace Tesselation
                 //DebugDump(mapFiller);
                 //Thread.Sleep(100);
                 paintfinished = false;
-<<<<<<< HEAD
-                const int rendermiliseconds = 0;
-=======
                 const int rendermiliseconds = 20;
->>>>>>> 859a86e9d783f26fbb7b55d99391fa4a8f84c468
                 movesperrender++;
                 if (s.ElapsedMilliseconds > rendermiliseconds)
                 {

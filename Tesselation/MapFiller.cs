@@ -92,46 +92,26 @@ namespace Tesselation
 
                 foreach (var shape in shaperotations)
                 {
-<<<<<<< HEAD
-                    foreach (var emptysquare in moves)
-=======
                     foreach (var placedposition in reducedmoves)
->>>>>>> 859a86e9d783f26fbb7b55d99391fa4a8f84c468
                     {
-                        foreach (var placeanchor in shape.data.tiles)
+                        debugtimer.Restart();
+                        bool canplace = !shape.data.tiles.Any(t => t.x + placedposition.X >= width ||
+                                                             t.y + placedposition.Y >= height ||
+                                                             board.GetData(t.x + placedposition.X, (t.y + placedposition.Y)) == true);
+                        debugtimer.Stop();
+                        canplacetime += debugtimer.ElapsedTicks;
+
+                        if (canplace)
                         {
+                            //place the piece
+                            var copy = shape.PlaceData(placedposition);
                             debugtimer.Restart();
-                            Point placedposition = new Point(emptysquare.X + placeanchor.x, emptysquare.Y + placeanchor.y);
-                            bool canplace = !shape.data.tiles.Any(t => t.x + placedposition.X >= width ||
-                                                                 t.y + placedposition.Y >= height ||
-                                                                 board.GetData(t.x + placedposition.X, (t.y + placedposition.Y)) == true);
-                            debugtimer.Stop();
-<<<<<<< HEAD
-                            canplacetime += debugtimer.ElapsedTicks;
-
-                            if (canplace)
+                            var tempcopy = new Board(board);
+                            foreach (var tile in copy.tiles)
                             {
-                                //place the piece
-                                var copy = shape.PlaceData(placedposition);
-                                debugtimer.Restart();
-                                var tempcopy = new Board(board);
-                                foreach (var tile in copy.tiles)
-                                {
-                                    tempcopy.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
-                                }
-                                debugtimer.Stop();
-                                boardresettime += debugtimer.ElapsedTicks;
-                                debugtimer.Restart();
-                                int touchingsquares = FindTouchingSquares(shape, placedposition);
-
-                                if (touchingsquares >= 1 && !blacklistedboards.Any(b => b.IsEqual(tempcopy)))
-                                {
-                                    potentialmoves.Add(new MoveData(copy, touchingsquares, true));
-                                }
-                                debugtimer.Stop();
-                                blacklisttesttime += debugtimer.ElapsedTicks;
-                                tempcopy.Dispose();
-=======
+                                tempcopy.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
+                            }
+                            debugtimer.Stop();
                             boardresettime += debugtimer.ElapsedTicks;
                             debugtimer.Restart();
                             int touchingsquares = FindTouchingSquares(shape, placedposition, tempcopy);
@@ -156,9 +136,12 @@ namespace Tesselation
                                     double thickness = ThinnessMetric(newarea);
                                     potentialmoves.Add(new MoveData(copy, touchingsquares, true, 0));
                                 }
->>>>>>> 859a86e9d783f26fbb7b55d99391fa4a8f84c468
                             }
+                            debugtimer.Stop();
+                            blacklisttesttime += debugtimer.ElapsedTicks;
+                            tempcopy.Dispose();
                         }
+
                     }
                 }
                 if (potentialmoves.Count >= 1)
