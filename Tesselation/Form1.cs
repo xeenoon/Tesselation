@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Policy;
@@ -63,25 +64,32 @@ namespace Tesselation
         MapFiller mapFiller;
         bool paintfinished = false;
         long totalmiliseconds = 0;
+        long movegentime = 0;
+        Random r = new Random();
         public void AIMove(object sender, EventArgs e)
         {
             DebugDump(mapFiller);
             int iterations = 0;
             Stopwatch totaltimer = new Stopwatch();
             totaltimer.Start();
+            Stopwatch movegentimer = new Stopwatch();
             Stopwatch s = new Stopwatch();
             s.Start();
             int movesperrender = 0;
             while (true)
             {
                 ++iterations;
+                movegentimer.Restart();
                 var moves = mapFiller.GenerateMoves();
+                movegentimer.Stop();
+                movegentime = movegentimer.ElapsedTicks;
                 if (!(moves is null))
                 {
                     if (moves.Count == 1 && !moves[0].isplacing)
                     {
-                        placedshapes.RemoveAll(s => s.data.location.X == moves[0].shape.location.X &&
+                        Shape lookfor = placedshapes.FirstOrDefault(s => s.data.location.X == moves[0].shape.location.X &&
                                                              s.data.location.Y == moves[0].shape.location.Y);
+                        placedshapes.TryTake(out lookfor);
 
                         foreach (var tile in moves[0].shape.tiles)
                         {
@@ -92,11 +100,8 @@ namespace Tesselation
                     }
                     else
                     {
-                        var bestmove = moves.OrderByDescending(t => t.touchingborders).FirstOrDefault();
-                        int squares = bestmove.touchingborders;
-                        bestmove = moves.Where(m => m.touchingborders >= squares).ToList().Shuffle().FirstOrDefault();
+                        var bestmove = moves[r.Next(0,moves.Count)];
                         placedshapes.Add(new Shape(bestmove.shape));
-
 
                         foreach (var tile in bestmove.shape.tiles)
                         {
@@ -111,8 +116,6 @@ namespace Tesselation
                     //MessageBox.Show(totalmiliseconds.ToString());
                 }
 
-                //DebugDump(mapFiller);
-                //Thread.Sleep(100);
                 paintfinished = false;
                 const int rendermiliseconds = 20;
                 movesperrender++;
@@ -124,11 +127,6 @@ namespace Tesselation
                     s.Restart();
                     canvas.Invalidate();
                     movesperrender = 0;
-
-                    while (!paintfinished)
-                    {
-                        //wait for paint to finish
-                    }
                 }
                 Board full = new Board(mapFiller.board.width, mapFiller.board.height);
                 for (int x = 0; x < full.width; ++x)
@@ -188,16 +186,19 @@ namespace Tesselation
                 double boardresettimems = mapFiller.boardresettime / (double)10000;
                 double blacklisttestms = mapFiller.blacklisttesttime / (double)10000;
                 double canplacems = mapFiller.canplacetime / (double)10000;
+                double sideareams = mapFiller.sideareatime / (double)10000;
+                double movegenms = movegentime / (double)10000;
 
-                label1.Text = $"Totaltime:{milis}\nboardresettime:{boardresettimems}\nblacklisttesttime:{blacklisttestms}\ncanplacetime:{canplacems}";
+                label1.Text = $"Totaltime:{milis}\nboardresettime:{boardresettimems}\nblacklisttesttime:{blacklisttestms}\ncanplacetime:{canplacems}\nsideareatime:{sideareams}";
                 mapFiller.boardresettime = 0;
                 mapFiller.blacklisttesttime = 0;
                 mapFiller.canplacetime = 0;
+                mapFiller.sideareatime = 0;
             }
         }
 
         public List<TilePlacer> tilePlacers = new List<TilePlacer>();
-        public List<Shape> placedshapes = new List<Shape>();
+        public ConcurrentBag<Shape> placedshapes = new ConcurrentBag<Shape>();
         public Shape placingshape;
         public int squaresize = 45;
         bool cantplace = true;
@@ -215,7 +216,7 @@ namespace Tesselation
             }
 
             //Copy incase of multithread issue
-            foreach (var shape in placedshapes)
+            foreach (var shape in placedshapes.ToList())
             {
                 List<Point> points = new List<Point>();
                 foreach (var tile in shape.data.tiles)
@@ -450,7 +451,8 @@ namespace Tesselation
             }
             if (deleting && deletingshape.X != -1)
             {
-                placedshapes.Remove(placedshapes.FirstOrDefault(s => s.data.location.X == deletingshape.X && s.data.location.Y == deletingshape.Y));
+                Shape? shape = placedshapes.FirstOrDefault(s => s.data.location.X == deletingshape.X && s.data.location.Y == deletingshape.Y);
+                placedshapes.TryTake(out shape);
                 canvas.Invalidate();
             }
         }
