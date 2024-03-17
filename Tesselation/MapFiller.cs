@@ -127,17 +127,6 @@ namespace Tesselation
                                     if (totalmoves.Count >= 50 || AreaCount(tempcopy, width, height) <= 1)
                                     //Dont split up areas when solving at end
                                     {
-                                        Point[] newarea = new Point[totalmoves.Count];
-                                        totalmoves.CopyTo(newarea);
-                                        foreach (var tile in copy.tiles)
-                                        {
-                                            int idx = Array.IndexOf(newarea, new Point(tile.x + placedposition.X + width * (tile.y + placedposition.Y)));
-                                            if (idx != -1)
-                                            {
-                                                newarea[idx] = new Point(-1, -1);
-                                            }
-                                        }
-                                        //double thickness = ThinnessMetric(newarea);
                                         potentialmoves.Add(new MoveData(copy, touchingsquares, true, 0));
                                     }
                                 }
