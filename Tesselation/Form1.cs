@@ -111,12 +111,7 @@ namespace Tesselation
                         mapFiller.placedshapes.Add(new Shape(bestmove.shape));
                     }
                 }
-                if (iterations > 1000)
-                {
-                    //MessageBox.Show(totalmiliseconds.ToString());
-                }
 
-                paintfinished = false;
                 const int rendermiliseconds = 20;
                 movesperrender++;
                 if (s.ElapsedMilliseconds > rendermiliseconds)
@@ -323,9 +318,10 @@ namespace Tesselation
             }
             if (totaltime >= 1)
             {
-                new Thread(() => MessageBox.Show(string.Format("Completed board size of [{0},{1}] in {2} miliseconds", horizontalsquares, verticalsquares, totaltime))).Start();
+                var cache = totaltime;
+                new Thread(() => MessageBox.Show(string.Format("Completed board size of [{0},{1}] in {2} miliseconds", horizontalsquares, verticalsquares, cache))).Start();
+                totaltime = 0;
             }
-            paintfinished = true;
         }
 
         private List<Point> OrderPoints(List<Point> points, List<Tile> tiles)
