@@ -84,7 +84,7 @@ namespace Tesselation
             Board boardcopy = new Board(width, height);
 
             bool cansum = CanSumToTarget(potentialshapes.Select(s => s.data.tiles.Count).Distinct().ToArray(), totalmoves.Count);
-
+            int mosttouching = 0;
             if (reducedmoves.Count() >= 1 && ((totalmoves.Count > 50) || cansum))
             {
                 //check if a possible combination could theoretically exist
@@ -96,14 +96,14 @@ namespace Tesselation
                     {
                         foreach (var potentialanchor in shape.data.tiles)
                         {
+                            debugtimer.Restart();
                             var placedposition = new Point(emptyspace.X - potentialanchor.x, emptyspace.Y - potentialanchor.y);
 
-                            debugtimer.Restart();
                             bool canplace = !shape.data.tiles.Any(t => t.x + placedposition.X >= width ||
-                                                                 t.y + placedposition.Y >= height ||
-                                                                 t.x + placedposition.X < 0 ||
-                                                                 t.y + placedposition.Y <0 ||
-                                                                 board.GetData(t.x + placedposition.X, (t.y + placedposition.Y)) == true);
+                                                                       t.y + placedposition.Y >= height ||
+                                                                       t.x + placedposition.X < 0 ||
+                                                                       t.y + placedposition.Y < 0 ||
+                                                                       board.GetData(t.x + placedposition.X, (t.y + placedposition.Y)));
                             debugtimer.Stop();
                             canplacetime += debugtimer.ElapsedTicks;
 
@@ -122,13 +122,16 @@ namespace Tesselation
                                 debugtimer.Restart();
                                 int touchingsquares = FindTouchingSquares(shape, placedposition, tempcopy);
 
-
-
-                                if (touchingsquares >= 2 && !blacklistedboards.Any(b => b.IsEqual(tempcopy)))
+                                if (touchingsquares >= mosttouching && !blacklistedboards.Any(b => b.IsEqual(tempcopy)))
                                 {
                                     if (totalmoves.Count >= 50 || AreaCount(tempcopy, width, height) <= 1)
                                     //Dont split up areas when solving at end
                                     {
+                                        if (touchingsquares > mosttouching)
+                                        {
+                                            potentialmoves.Clear(); //Remove moves we aren't going to choose anyway
+                                        }
+                                        mosttouching = touchingsquares;
                                         potentialmoves.Add(new MoveData(copy, touchingsquares, true, 0));
                                     }
                                 }
@@ -194,15 +197,15 @@ namespace Tesselation
             //Add side of board
             for (int i = 0; i < board.width; ++i)
             {
-                toiterate.Add(new Point(i, -1));
-                toiterate.Add(new Point(i, height));
+                toiterate.Add(new Point(i, 0));
+                toiterate.Add(new Point(i, height-1));
             }
             for (int i = 0; i < board.height; ++i)
             {
-                toiterate.Add(new Point(-1, i));
-                toiterate.Add(new Point(width, i));
+                toiterate.Add(new Point(0, i));
+                toiterate.Add(new Point(width-1, i));
             }
-
+            return toiterate;
             foreach (var tile in toiterate)
             {
                 if ((tile.X < 0 && tile.Y < 0 && tile.X >= width && tile.Y >= height) || 

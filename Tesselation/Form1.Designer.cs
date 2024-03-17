@@ -33,13 +33,13 @@
             splitContainer1 = new SplitContainer();
             label1 = new Label();
             panel1 = new Panel();
-            button2 = new Button();
             button1 = new Button();
             label4 = new Label();
             label3 = new Label();
             textBox2 = new TextBox();
             textBox1 = new TextBox();
             label2 = new Label();
+            button2 = new Button();
             pictureBox2 = new PictureBox();
             pictureBox1 = new PictureBox();
             ((System.ComponentModel.ISupportInitialize)canvas).BeginInit();
@@ -74,12 +74,12 @@
             // 
             // splitContainer1.Panel1
             // 
-            splitContainer1.Panel1.Controls.Add(label1);
             splitContainer1.Panel1.Controls.Add(canvas);
             // 
             // splitContainer1.Panel2
             // 
             splitContainer1.Panel2.Controls.Add(panel1);
+            splitContainer1.Panel2.Controls.Add(label1);
             splitContainer1.Panel2.Controls.Add(button2);
             splitContainer1.Panel2.Controls.Add(pictureBox2);
             splitContainer1.Panel2.Controls.Add(pictureBox1);
@@ -93,12 +93,11 @@
             // 
             label1.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             label1.AutoSize = true;
-            label1.Location = new Point(71, 366);
+            label1.Location = new Point(2, 372);
             label1.Name = "label1";
             label1.Size = new Size(121, 75);
             label1.TabIndex = 2;
             label1.Text = "Totaltime:\r\nemptyareatime: \r\ncansumtotargettime: \r\nblacklisttesttime: \r\nbacktracetime:";
-            label1.Visible = false;
             // 
             // panel1
             // 
@@ -110,22 +109,11 @@
             panel1.Controls.Add(textBox2);
             panel1.Controls.Add(textBox1);
             panel1.Controls.Add(label2);
-            panel1.Location = new Point(6, 339);
+            panel1.Location = new Point(3, 339);
             panel1.Name = "panel1";
             panel1.Size = new Size(183, 108);
             panel1.TabIndex = 1;
             panel1.Visible = false;
-            // 
-            // button2
-            // 
-            button2.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            button2.Location = new Point(114, 424);
-            button2.Name = "button2";
-            button2.Size = new Size(75, 23);
-            button2.TabIndex = 2;
-            button2.Text = "Start AI";
-            button2.UseVisualStyleBackColor = true;
-            button2.Click += button2_Click;
             // 
             // button1
             // 
@@ -178,6 +166,17 @@
             label2.TabIndex = 3;
             label2.Text = "Board size";
             // 
+            // button2
+            // 
+            button2.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            button2.Location = new Point(114, 424);
+            button2.Name = "button2";
+            button2.Size = new Size(75, 23);
+            button2.TabIndex = 2;
+            button2.Text = "Start AI";
+            button2.UseVisualStyleBackColor = true;
+            button2.Click += button2_Click;
+            // 
             // pictureBox2
             // 
             pictureBox2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
@@ -217,8 +216,8 @@
             Resize += MainForm_Resize;
             ((System.ComponentModel.ISupportInitialize)canvas).EndInit();
             splitContainer1.Panel1.ResumeLayout(false);
-            splitContainer1.Panel1.PerformLayout();
             splitContainer1.Panel2.ResumeLayout(false);
+            splitContainer1.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
             splitContainer1.ResumeLayout(false);
             panel1.ResumeLayout(false);
