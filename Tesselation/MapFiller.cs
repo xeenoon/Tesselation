@@ -122,20 +122,20 @@ namespace Tesselation
                             {
                                 //place the piece
                                 var copy = shape.PlaceData(placedposition);
-                                var tempcopy = new Board(board);
+                                //var tempcopy = new Board(board);
                                 debugtimer.Restart();
                                 foreach (var tile in copy.tiles)
                                 {
-                                    tempcopy.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
+                                    board.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
                                 }
                                 debugtimer.Stop();
                                 boardresettime += debugtimer.ElapsedTicks;
                                 debugtimer.Restart();
-                                int touchingsquares = FindTouchingSquares(shape, placedposition, tempcopy);
+                                int touchingsquares = FindTouchingSquares(shape, placedposition, board);
 
-                                if (touchingsquares >= mosttouching && !blacklistedboards.Any(b => b.IsEqual(tempcopy)))
+                                if (touchingsquares >= mosttouching && !blacklistedboards.Any(b => b.IsEqual(board)))
                                 {
-                                    if (totalmoves.Count >= 50 || AreaCount(tempcopy, width, height) <= 1)
+                                    if (totalmoves.Count >= 50 || AreaCount(board, width, height) <= 1)
                                     //Dont split up areas when solving at end
                                     {
                                         if (touchingsquares > mosttouching)
@@ -146,9 +146,18 @@ namespace Tesselation
                                         potentialmoves.Add(new MoveData(copy, touchingsquares, true, 0));
                                     }
                                 }
+
                                 debugtimer.Stop();
                                 blacklisttesttime += debugtimer.ElapsedTicks;
-                                tempcopy.Dispose();
+
+                                debugtimer.Restart();
+                                foreach (var tile in copy.tiles)
+                                {
+                                    board.ClearBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
+                                }
+
+                                debugtimer.Stop();
+                                boardresettime += debugtimer.ElapsedTicks;
                             }
                         }
                     }

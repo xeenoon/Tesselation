@@ -491,11 +491,6 @@ namespace Tesselation
             canvas.Invalidate();
         }
 
-        private void button2_Click(object sender, EventArgs e)
-        {
-            panel1.Visible = true;
-        }
-
         private void button1_Click(object sender, EventArgs e)
         {
             horizontalsquares = int.Parse(textBox1.Text);
@@ -505,7 +500,6 @@ namespace Tesselation
 
             AIAsyncMove.AutoReset = false;
             AIAsyncMove.Start();
-            panel1.Visible = false;
         }
     }
     public class TilePlacer
