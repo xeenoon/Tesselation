@@ -92,56 +92,60 @@ namespace Tesselation
 
                 foreach (var shape in shaperotations)
                 {
-                    foreach (var placedposition in reducedmoves)
+                    foreach (var emptyspace in reducedmoves)
                     {
-                        debugtimer.Restart();
-                        bool canplace = !shape.data.tiles.Any(t => t.x + placedposition.X >= width ||
-                                                             t.y + placedposition.Y >= height ||
-                                                             board.GetData(t.x + placedposition.X, (t.y + placedposition.Y)) == true);
-                        debugtimer.Stop();
-                        canplacetime += debugtimer.ElapsedTicks;
-
-                        if (canplace)
+                        foreach (var potentialanchor in shape.data.tiles)
                         {
-                            //place the piece
-                            var copy = shape.PlaceData(placedposition);
+                            var placedposition = new Point(emptyspace.X + potentialanchor.x, emptyspace.Y + potentialanchor.y);
+
                             debugtimer.Restart();
-                            var tempcopy = new Board(board);
-                            foreach (var tile in copy.tiles)
-                            {
-                                tempcopy.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
-                            }
+                            bool canplace = !shape.data.tiles.Any(t => t.x + placedposition.X >= width ||
+                                                                 t.y + placedposition.Y >= height ||
+                                                                 board.GetData(t.x + placedposition.X, (t.y + placedposition.Y)) == true);
                             debugtimer.Stop();
-                            boardresettime += debugtimer.ElapsedTicks;
-                            debugtimer.Restart();
-                            int touchingsquares = FindTouchingSquares(shape, placedposition, tempcopy);
-                            
+                            canplacetime += debugtimer.ElapsedTicks;
 
-
-                            if (touchingsquares >= 2 && !blacklistedboards.Any(b => b.IsEqual(tempcopy)))
+                            if (canplace)
                             {
-                                if (totalmoves.Count >= 50 || AreaCount(tempcopy, width, height) <= 1) 
-                                    //Dont split up areas when solving at end
+                                //place the piece
+                                var copy = shape.PlaceData(placedposition);
+                                debugtimer.Restart();
+                                var tempcopy = new Board(board);
+                                foreach (var tile in copy.tiles)
                                 {
-                                    Point[] newarea = new Point[totalmoves.Count];
-                                    totalmoves.CopyTo(newarea);
-                                    foreach (var tile in copy.tiles)
-                                    {
-                                        int idx = Array.IndexOf(newarea, new Point(tile.x + placedposition.X + width * (tile.y + placedposition.Y)));
-                                        if (idx != -1)
-                                        {
-                                            newarea[idx] = new Point(-1,-1);
-                                        }
-                                    }
-                                    double thickness = ThinnessMetric(newarea);
-                                    potentialmoves.Add(new MoveData(copy, touchingsquares, true, 0));
+                                    tempcopy.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
                                 }
-                            }
-                            debugtimer.Stop();
-                            blacklisttesttime += debugtimer.ElapsedTicks;
-                            tempcopy.Dispose();
-                        }
+                                debugtimer.Stop();
+                                boardresettime += debugtimer.ElapsedTicks;
+                                debugtimer.Restart();
+                                int touchingsquares = FindTouchingSquares(shape, placedposition, tempcopy);
 
+
+
+                                if (touchingsquares >= 2 && !blacklistedboards.Any(b => b.IsEqual(tempcopy)))
+                                {
+                                    if (totalmoves.Count >= 50 || AreaCount(tempcopy, width, height) <= 1)
+                                    //Dont split up areas when solving at end
+                                    {
+                                        Point[] newarea = new Point[totalmoves.Count];
+                                        totalmoves.CopyTo(newarea);
+                                        foreach (var tile in copy.tiles)
+                                        {
+                                            int idx = Array.IndexOf(newarea, new Point(tile.x + placedposition.X + width * (tile.y + placedposition.Y)));
+                                            if (idx != -1)
+                                            {
+                                                newarea[idx] = new Point(-1, -1);
+                                            }
+                                        }
+                                        //double thickness = ThinnessMetric(newarea);
+                                        potentialmoves.Add(new MoveData(copy, touchingsquares, true, 0));
+                                    }
+                                }
+                                debugtimer.Stop();
+                                blacklisttesttime += debugtimer.ElapsedTicks;
+                                tempcopy.Dispose();
+                            }
+                        }
                     }
                 }
                 if (potentialmoves.Count >= 1)
