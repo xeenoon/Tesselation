@@ -115,11 +115,6 @@ namespace Tesselation
                                 }
                             }
 
-                            //canplace = !shape.data.tiles.Any(t => t.x + placedposition.X >= width ||
-                            //                                           t.y + placedposition.Y >= height ||
-                            //                                           t.x + placedposition.X < 0 ||
-                            //                                           t.y + placedposition.Y < 0 ||
-                            //                                           board.GetData(t.x + placedposition.X, (t.y + placedposition.Y)));
                             debugtimer.Stop();
                             canplacetime += debugtimer.ElapsedTicks;
 
@@ -127,8 +122,8 @@ namespace Tesselation
                             {
                                 //place the piece
                                 var copy = shape.PlaceData(placedposition);
-                                debugtimer.Restart();
                                 var tempcopy = new Board(board);
+                                debugtimer.Restart();
                                 foreach (var tile in copy.tiles)
                                 {
                                     tempcopy.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));

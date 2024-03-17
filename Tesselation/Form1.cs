@@ -69,7 +69,7 @@ namespace Tesselation
         Random r = new Random();
         public void AIMove(object sender, EventArgs e)
         {
-            DebugDump(mapFiller);
+            //DebugDump(mapFiller);
             int iterations = 0;
             Stopwatch totaltimer = new Stopwatch();
             totaltimer.Start();

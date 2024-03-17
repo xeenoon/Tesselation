@@ -39,7 +39,6 @@
             textBox1 = new TextBox();
             label2 = new Label();
             label1 = new Label();
-            button2 = new Button();
             pictureBox2 = new PictureBox();
             pictureBox1 = new PictureBox();
             ((System.ComponentModel.ISupportInitialize)canvas).BeginInit();
@@ -58,7 +57,7 @@
             canvas.Dock = DockStyle.Fill;
             canvas.Location = new Point(0, 0);
             canvas.Name = "canvas";
-            canvas.Size = new Size(607, 450);
+            canvas.Size = new Size(917, 717);
             canvas.TabIndex = 0;
             canvas.TabStop = false;
             canvas.Click += canvas_Click;
@@ -80,12 +79,11 @@
             // 
             splitContainer1.Panel2.Controls.Add(panel1);
             splitContainer1.Panel2.Controls.Add(label1);
-            splitContainer1.Panel2.Controls.Add(button2);
             splitContainer1.Panel2.Controls.Add(pictureBox2);
             splitContainer1.Panel2.Controls.Add(pictureBox1);
             splitContainer1.Panel2.Paint += splitContainer1_Panel2_Paint;
-            splitContainer1.Size = new Size(800, 450);
-            splitContainer1.SplitterDistance = 607;
+            splitContainer1.Size = new Size(1209, 717);
+            splitContainer1.SplitterDistance = 917;
             splitContainer1.TabIndex = 1;
             splitContainer1.KeyPress += MainForm_KeyPress;
             // 
@@ -99,11 +97,10 @@
             panel1.Controls.Add(textBox2);
             panel1.Controls.Add(textBox1);
             panel1.Controls.Add(label2);
-            panel1.Location = new Point(6, 342);
+            panel1.Location = new Point(105, 609);
             panel1.Name = "panel1";
             panel1.Size = new Size(183, 108);
             panel1.TabIndex = 1;
-            panel1.Visible = false;
             // 
             // button1
             // 
@@ -111,7 +108,7 @@
             button1.Name = "button1";
             button1.Size = new Size(75, 23);
             button1.TabIndex = 7;
-            button1.Text = "Generate";
+            button1.Text = "Start AI";
             button1.UseVisualStyleBackColor = true;
             button1.Click += button1_Click;
             // 
@@ -158,31 +155,20 @@
             // 
             // label1
             // 
-            label1.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            label1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             label1.AutoSize = true;
-            label1.Location = new Point(2, 353);
+            label1.Location = new Point(3, 638);
             label1.Name = "label1";
             label1.Size = new Size(121, 75);
             label1.TabIndex = 2;
             label1.Text = "Totaltime:\r\nemptyareatime: \r\ncansumtotargettime: \r\nblacklisttesttime: \r\nbacktracetime:";
-            // 
-            // button2
-            // 
-            button2.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            button2.Location = new Point(114, 424);
-            button2.Name = "button2";
-            button2.Size = new Size(75, 23);
-            button2.TabIndex = 2;
-            button2.Text = "Start AI";
-            button2.UseVisualStyleBackColor = true;
-            button2.Click += button2_Click;
             // 
             // pictureBox2
             // 
             pictureBox2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             pictureBox2.BackColor = Color.Transparent;
             pictureBox2.Image = (Image)resources.GetObject("pictureBox2.Image");
-            pictureBox2.Location = new Point(136, 59);
+            pictureBox2.Location = new Point(235, 59);
             pictureBox2.Name = "pictureBox2";
             pictureBox2.Size = new Size(50, 50);
             pictureBox2.SizeMode = PictureBoxSizeMode.StretchImage;
@@ -195,7 +181,7 @@
             pictureBox1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             pictureBox1.BackColor = Color.White;
             pictureBox1.Image = (Image)resources.GetObject("pictureBox1.Image");
-            pictureBox1.Location = new Point(136, 3);
+            pictureBox1.Location = new Point(235, 3);
             pictureBox1.Name = "pictureBox1";
             pictureBox1.Size = new Size(50, 50);
             pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
@@ -207,7 +193,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(1209, 717);
             Controls.Add(splitContainer1);
             Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
@@ -241,6 +227,5 @@
         private TextBox textBox2;
         private TextBox textBox1;
         private Label label2;
-        private Button button2;
     }
 }
