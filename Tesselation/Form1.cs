@@ -58,6 +58,7 @@ namespace Tesselation
                     tilePlacers.Add(new TilePlacer(shape, new Rectangle(rectx, recty, 150, 150)));
                 }
             }
+            AIAsyncMove.Elapsed += AIMove;
             mapFiller = new MapFiller(horizontalsquares, verticalsquares, tilePlacers.Select(t => t.shape).ToList());
         }
         System.Timers.Timer AIAsyncMove = new System.Timers.Timer(1);
@@ -500,11 +501,9 @@ namespace Tesselation
             horizontalsquares = int.Parse(textBox1.Text);
             verticalsquares = int.Parse(textBox2.Text);
 
-            mapFiller = new MapFiller(horizontalsquares, verticalsquares, tilePlacers.Select(t => t.shape).ToList());
-            canvas.Refresh();
+            pictureBox2_Click(sender, e);
 
             AIAsyncMove.AutoReset = false;
-            AIAsyncMove.Elapsed += AIMove;
             AIAsyncMove.Start();
             panel1.Visible = false;
         }
