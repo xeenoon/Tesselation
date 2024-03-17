@@ -86,7 +86,15 @@ namespace Tesselation
             return !IsEqual((nint)data, (nint)ptr2, size);
         }
         public unsafe bool IsEqual(Board board)
-        { 
+        {
+            for (int i = 0; i < size; ++i)
+            {
+                if (data[i] != board.data[i]) //forgot dll
+                {
+                    return false;
+                }
+            }
+            return true;
             return !IsEqual((nint)data, (nint)board.data, size);
         }
         public string ToString()

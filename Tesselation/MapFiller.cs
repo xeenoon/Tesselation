@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Tesselation;
@@ -73,20 +75,28 @@ namespace Tesselation
                 return precalcmoves.moves;
             }
             List<MoveData> potentialmoves = new List<MoveData>();
-            var moves = FindEmptyArea(board, width, height);
+            var totalmoves = FindEmptyArea(board, width, height);
+            var reducedmoves = FindSideAreas(placedshapes, board);
+            if (reducedmoves.Count == 0) 
+            {
+            }
             Random r = new Random();
             Board boardcopy = new Board(width, height);
 
-            bool cansum = CanSumToTarget(potentialshapes.Select(s => s.data.tiles.Count).Distinct().ToArray(), moves.Count);
+            bool cansum = CanSumToTarget(potentialshapes.Select(s => s.data.tiles.Count).Distinct().ToArray(), totalmoves.Count);
 
-            if ((moves.Count > 50) || cansum)
+            if (reducedmoves.Count() >= 1 && ((totalmoves.Count > 50) || cansum))
             {
                 //check if a possible combination could theoretically exist
                 List<Shape> shaperotations = potentialshapes.SelectMany(s => s.rotations).ToList();
 
                 foreach (var shape in shaperotations)
                 {
+<<<<<<< HEAD
                     foreach (var emptysquare in moves)
+=======
+                    foreach (var placedposition in reducedmoves)
+>>>>>>> 859a86e9d783f26fbb7b55d99391fa4a8f84c468
                     {
                         foreach (var placeanchor in shape.data.tiles)
                         {
@@ -96,6 +106,7 @@ namespace Tesselation
                                                                  t.y + placedposition.Y >= height ||
                                                                  board.GetData(t.x + placedposition.X, (t.y + placedposition.Y)) == true);
                             debugtimer.Stop();
+<<<<<<< HEAD
                             canplacetime += debugtimer.ElapsedTicks;
 
                             if (canplace)
@@ -120,6 +131,32 @@ namespace Tesselation
                                 debugtimer.Stop();
                                 blacklisttesttime += debugtimer.ElapsedTicks;
                                 tempcopy.Dispose();
+=======
+                            boardresettime += debugtimer.ElapsedTicks;
+                            debugtimer.Restart();
+                            int touchingsquares = FindTouchingSquares(shape, placedposition, tempcopy);
+                            
+
+
+                            if (touchingsquares >= 2 && !blacklistedboards.Any(b => b.IsEqual(tempcopy)))
+                            {
+                                if (totalmoves.Count >= 50 || AreaCount(tempcopy, width, height) <= 1) 
+                                    //Dont split up areas when solving at end
+                                {
+                                    Point[] newarea = new Point[totalmoves.Count];
+                                    totalmoves.CopyTo(newarea);
+                                    foreach (var tile in copy.tiles)
+                                    {
+                                        int idx = Array.IndexOf(newarea, new Point(tile.x + placedposition.X + width * (tile.y + placedposition.Y)));
+                                        if (idx != -1)
+                                        {
+                                            newarea[idx] = new Point(-1,-1);
+                                        }
+                                    }
+                                    double thickness = ThinnessMetric(newarea);
+                                    potentialmoves.Add(new MoveData(copy, touchingsquares, true, 0));
+                                }
+>>>>>>> 859a86e9d783f26fbb7b55d99391fa4a8f84c468
                             }
                         }
                     }
@@ -138,13 +175,17 @@ namespace Tesselation
             //Found no legal moves? Backtrace if there were many moves available, as it is likely that the problem was caused by the last piece placed
             Shape toremove;
             //Use normal backtracing to remove two areas if possible
-            if (adjacentshapes.Count == 0 && (moves.Count > 30 || moves.Count <= 4 || AreaCount(board, width, height) >= 2))
+            if (totalmoves.Count > 20)
+            {
+                adjacentshapes.Clear();
+            }
+            else if (adjacentshapes.Count == 0)
             {
                 //instead of backtracing, try to remove side pieces
                 adjacentshapes = placedshapes.Where(shape => shape.data.touchingsquares.Any(touchingtile =>
-                moves.Contains(new Point(shape.data.location.X + touchingtile.X, shape.data.location.Y + touchingtile.Y)))).ToList();
+                totalmoves.Contains(new Point(shape.data.location.X + touchingtile.X, shape.data.location.Y + touchingtile.Y)))).ToList();
 
-                foreach (var shape in adjacentshapes)
+                foreach (var shape in adjacentshapes.OrderBy(a=>a.data.location.X))
                 {
                     placedshapes.Remove(shape);
                     placedshapes.Add(shape); //Push to end of list;
@@ -153,7 +194,7 @@ namespace Tesselation
             toremove = placedshapes.Last();
 
             potentialmoves.Clear();
-            potentialmoves.Add(new MoveData(toremove.data, 0, false));
+            potentialmoves.Add(new MoveData(toremove.data, 0, false, 0));
             memcpy(boardcopy.data, board.data, board.size);
             blacklistedboards.Add(boardcopy);
 
@@ -168,20 +209,68 @@ namespace Tesselation
             return potentialmoves;
         }
 
-        private int FindTouchingSquares(Shape copy, Point position)
+        private List<Point> FindSideAreas(List<Shape> placedshapes, Board board)
+        {
+            List<Point> result = new List<Point>();
+            List<Point> toiterate = placedshapes.SelectMany(s=>s.data.touchingsquares.Select(ts=>new Point(ts.X + s.data.location.X, ts.Y + s.data.location.Y))).ToList();
+            //Add side of board
+            for (int i = 0; i < board.width; ++i)
+            {
+                toiterate.Add(new Point(i, -1));
+                toiterate.Add(new Point(i, height));
+            }
+            for (int i = 0; i < board.height; ++i)
+            {
+                toiterate.Add(new Point(-1, i));
+                toiterate.Add(new Point(width, i));
+            }
+
+            foreach (var tile in toiterate)
+            {
+                if ((tile.X < 0 && tile.Y < 0 && tile.X >= width && tile.Y >= height) || 
+                    !board.GetData(tile.X, tile.Y))
+                {
+                    //Found an empty area?
+                    for (int x = tile.X - 2; x < tile.X + 3; ++x)
+                    {
+                        for (int y = tile.Y -2; y < tile.Y + 3; ++y)
+                        {
+                            if (x >= 0 && y >= 0 && x <= width-1 && y <= height-1 && 
+                                !board.GetData(x, y))
+                            {
+                                result.Add(new Point(x,y));
+                            }
+                        }
+                    }
+                }
+            }
+            return result.Distinct().ToList();
+        }
+
+        private int FindTouchingSquares(Shape copy, Point position, Board b)
         {
             int result = 0;
+            bool[] visited = new bool[width * height];
             foreach (var point in copy.data.touchingsquares)
             {
+                int persquareresard = 1; //Reward AI for having one tile connect to more other tiles
                 int x = point.X + position.X;
                 int y = point.Y + position.Y;
-                if (x >= width || y>=height || x < 0 || y < 0)
+                if (x >= width || y>=height || x < 0 || y < 0 || board.GetData(x,y))
                 {
-                    ++result;
+                    result += persquareresard;
+                    persquareresard += 2;
                 }
-                else if (board.GetData(x,y) == true)
+                else
                 {
-                    result += 1;
+                    //Do a mini DFS to find if there is a nearby area that is smaller than 4
+                    List<Point> emptyArea = new List<Point>();
+                    DFS(b, x, y, width, height, visited, emptyArea, 3);
+                    if (emptyArea.Count >= 1 && emptyArea.Count <= 3) 
+                        //Too small to place a piece?
+                    {
+                        return 0;
+                    }
                 }
             }
             return result;
@@ -246,8 +335,12 @@ namespace Tesselation
 
             return areacount;
         }
-        static void DFS(Board board, int startX, int startY, int width, int height, bool[] visited, List<Point> emptyArea)
+        static void DFS(Board board, int startX, int startY, int width, int height, bool[] visited, List<Point> emptyArea, int distancelimit = int.MaxValue)
         {
+            if (visited[startX + startY*width])
+            {
+                return;
+            }
             Stack<Point> stack = new Stack<Point>();
             stack.Push(new Point(startX, startY));
 
@@ -257,7 +350,8 @@ namespace Tesselation
                 int x = current.X;
                 int y = current.Y;
 
-                if (x < 0 || x >= width || y < 0 || y >= height || visited[x + y * width] || board.GetData(x, y) == true)
+                if (x < 0 || x >= width || y < 0 || y >= height || visited[x + y * width] || board.GetData(x, y) == true ||
+                    Math.Abs(startX-x) >= distancelimit || Math.Abs(startY-y) >= distancelimit)
                 {
                     continue;
                 }
@@ -272,19 +366,50 @@ namespace Tesselation
                 stack.Push(new Point(x, y - 1));
             }
         }
+        public double ThinnessMetric(Point[] tiles)
+        {
+            List<int> widths = new List<int>();
+            List<int> heights = new List<int>();
+            foreach (var tile in tiles)
+            {
+                if (tile.X == -1 || tile.Y ==  -1) //-1 is null flag
+                {
+                    continue;
+                }
+                int width = 0;
+                int x = tile.X;
+                while (tiles.Contains(new Point(x,tile.Y)))
+                {
+                    x++;
+                    width++;
+                }
+                widths.Add(width);
 
+                int height = 0;
+                int y = tile.Y;
+                while (tiles.Contains(new Point(tile.X, y)))
+                {
+                    y++;
+                    height++;
+                }
+                heights.Add(height);
+            }
+            return Math.Min(widths.Average(), heights.Average());
+        }
     }
     public class MoveData
     {
         public ShapeData shape;
         public int touchingborders;
         public bool isplacing;
+        public double areathickness;
 
-        public MoveData(ShapeData shape, int touchingborders, bool isplacing)
+        public MoveData(ShapeData shape, int touchingborders, bool isplacing, double areathickness)
         {
             this.shape = shape;
             this.touchingborders = touchingborders;
             this.isplacing = isplacing;
+            this.areathickness = areathickness;
         }
     }
     public class BoardMoves

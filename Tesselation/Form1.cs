@@ -93,7 +93,7 @@ namespace Tesselation
                     }
                     else
                     {
-                        var bestmove = moves.OrderByDescending(t => t.touchingborders).FirstOrDefault();
+                        var bestmove = moves.OrderByDescending(t => t.touchingborders).OrderByDescending(t=>t.areathickness).FirstOrDefault();
                         int squares = bestmove.touchingborders;
                         bestmove = moves.Where(m=>m.touchingborders >= squares).ToList().Shuffle().FirstOrDefault();
                         placedshapes.Add(new Shape(bestmove.shape));
@@ -112,10 +112,14 @@ namespace Tesselation
                     //MessageBox.Show(totalmiliseconds.ToString());
                 }
 
-                DebugDump(mapFiller);
-
+                //DebugDump(mapFiller);
+                //Thread.Sleep(100);
                 paintfinished = false;
+<<<<<<< HEAD
                 const int rendermiliseconds = 0;
+=======
+                const int rendermiliseconds = 20;
+>>>>>>> 859a86e9d783f26fbb7b55d99391fa4a8f84c468
                 movesperrender++;
                 if (s.ElapsedMilliseconds > rendermiliseconds)
                 {

@@ -189,7 +189,11 @@ namespace Tesselation
             {
                 duplicate.tiles.Add(new Tile(tile.x, tile.y));
             }
-            duplicate.color = this.data.color;
+            foreach (var tile in data.touchingsquares)
+            {
+                duplicate.touchingsquares.Add(new Point(tile.X, tile.Y));
+            }
+            duplicate.color = data.color;
             return duplicate;
         }
 
