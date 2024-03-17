@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Policy;
 using System.Windows.Forms;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Tesselation
 {
@@ -14,8 +15,8 @@ namespace Tesselation
         static extern IntPtr memcpy(IntPtr dest, IntPtr src, int count);
 
 
-        public static int horizontalsquares = 100;
-        public static int verticalsquares = 100;
+        public static int horizontalsquares = 10;
+        public static int verticalsquares = 10;
 
         public static MainForm instance;
         public static SplitContainer menusplit;
@@ -47,7 +48,7 @@ namespace Tesselation
                     Shape shape;
                     do
                     {
-                        shape = new Shape(x+4, shapesize, shapesize);
+                        shape = new Shape(x + 4, shapesize, shapesize);
                     } while (tilePlacers.Select(t => t.shape).Any(s => shape.rotations.Any(rs => rs == s)));
 
                     int rectx = 20 + x * 160;
@@ -56,13 +57,9 @@ namespace Tesselation
                     tilePlacers.Add(new TilePlacer(shape, new Rectangle(rectx, recty, 150, 150)));
                 }
             }
-            mapFiller = new MapFiller(horizontalsquares, verticalsquares, tilePlacers.Select(t=>t.shape).ToList());
-
-            AIMoveDelay.AutoReset = false;
-            AIMoveDelay.Elapsed += AIMove;
-            AIMoveDelay.Start();
+            mapFiller = new MapFiller(horizontalsquares, verticalsquares, tilePlacers.Select(t => t.shape).ToList());
         }
-        System.Timers.Timer AIMoveDelay = new System.Timers.Timer(1000);
+        System.Timers.Timer AIAsyncMove = new System.Timers.Timer(1);
         MapFiller mapFiller;
         bool paintfinished = false;
         long totalmiliseconds = 0;
@@ -70,10 +67,12 @@ namespace Tesselation
         {
             DebugDump(mapFiller);
             int iterations = 0;
+            Stopwatch totaltimer = new Stopwatch();
+            totaltimer.Start();
             Stopwatch s = new Stopwatch();
             s.Start();
             int movesperrender = 0;
-            while (true) 
+            while (true)
             {
                 ++iterations;
                 var moves = mapFiller.GenerateMoves();
@@ -81,7 +80,7 @@ namespace Tesselation
                 {
                     if (moves.Count == 1 && !moves[0].isplacing)
                     {
-                        placedshapes.RemoveAll(s=>s.data.location.X == moves[0].shape.location.X &&
+                        placedshapes.RemoveAll(s => s.data.location.X == moves[0].shape.location.X &&
                                                              s.data.location.Y == moves[0].shape.location.Y);
 
                         foreach (var tile in moves[0].shape.tiles)
@@ -93,9 +92,9 @@ namespace Tesselation
                     }
                     else
                     {
-                        var bestmove = moves.OrderByDescending(t => t.touchingborders).OrderByDescending(t=>t.areathickness).FirstOrDefault();
+                        var bestmove = moves.OrderByDescending(t => t.touchingborders).OrderByDescending(t => t.areathickness).FirstOrDefault();
                         int squares = bestmove.touchingborders;
-                        bestmove = moves.Where(m=>m.touchingborders >= squares).ToList().Shuffle().FirstOrDefault();
+                        bestmove = moves.Where(m => m.touchingborders >= squares).ToList().Shuffle().FirstOrDefault();
                         placedshapes.Add(new Shape(bestmove.shape));
 
 
@@ -136,17 +135,19 @@ namespace Tesselation
                 {
                     for (int y = 0; y < full.height; ++y)
                     {
-                        full.SetBit(x,y);
+                        full.SetBit(x, y);
                     }
                 }
                 if (mapFiller.board.IsEqual(full)) //Fast way to check if board is full
                 {
+                    totaltimer.Stop();
+                    totaltime += totaltimer.ElapsedMilliseconds;
                     canvas.Invalidate();
                     return; //issolved
                 }
             }
         }
-
+        long totaltime = 0;
         const string dumpfile = @"C:\Users\ccw10\Downloads\debugdump.txt";
 
         private void DebugDump(MapFiller mapfiller)
@@ -319,7 +320,10 @@ namespace Tesselation
                     e.Graphics.FillRectangle(new Pen(previewcolor).Brush, (placingtile.X + tile.x) * squaresize + leftoffset, (placingtile.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
                 }
             }
-
+            if (totaltime >= 1)
+            {
+                new Thread(() => MessageBox.Show(string.Format("Completed board size of [{0},{1}] in {2} miliseconds", horizontalsquares, verticalsquares, totaltime))).Start();
+            }
             paintfinished = true;
         }
 
@@ -483,9 +487,28 @@ namespace Tesselation
 
         private void pictureBox2_Click(object sender, EventArgs e)
         {
+            mapFiller = new MapFiller(horizontalsquares, verticalsquares, tilePlacers.Select(t => t.shape).ToList());
             placedshapes.Clear();
             canvas.Invalidate();
-            AIMoveDelay.Start();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            panel1.Visible = true;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            horizontalsquares = int.Parse(textBox1.Text);
+            verticalsquares = int.Parse(textBox2.Text);
+
+            mapFiller = new MapFiller(horizontalsquares, verticalsquares, tilePlacers.Select(t => t.shape).ToList());
+            canvas.Refresh();
+
+            AIAsyncMove.AutoReset = false;
+            AIAsyncMove.Elapsed += AIMove;
+            AIAsyncMove.Start();
+            panel1.Visible = false;
         }
     }
     public class TilePlacer
