@@ -96,11 +96,13 @@ namespace Tesselation
                     {
                         foreach (var potentialanchor in shape.data.tiles)
                         {
-                            var placedposition = new Point(emptyspace.X + potentialanchor.x, emptyspace.Y + potentialanchor.y);
+                            var placedposition = new Point(emptyspace.X - potentialanchor.x, emptyspace.Y - potentialanchor.y);
 
                             debugtimer.Restart();
                             bool canplace = !shape.data.tiles.Any(t => t.x + placedposition.X >= width ||
                                                                  t.y + placedposition.Y >= height ||
+                                                                 t.x + placedposition.X < 0 ||
+                                                                 t.y + placedposition.Y <0 ||
                                                                  board.GetData(t.x + placedposition.X, (t.y + placedposition.Y)) == true);
                             debugtimer.Stop();
                             canplacetime += debugtimer.ElapsedTicks;
