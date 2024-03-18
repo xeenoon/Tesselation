@@ -66,7 +66,7 @@ namespace Tesselation
 
         private void InitializeBoard()
         {
-            squaresize = (int)Math.Min((menusplit.Panel1.Width - (leftoffset + rightoffset)) / (double)horizontalsquares, (Height - heightoffset) / (double)verticalsquares);
+            squaresize = Math.Min((menusplit.Panel1.Width - (leftoffset + rightoffset)) / (float)horizontalsquares, (Height - heightoffset) / (float)verticalsquares);
             canvasdata = new Bitmap(canvas.Width, canvas.Height);
             var g = Graphics.FromImage(canvasdata);
             for (int x = 0; x < horizontalsquares; ++x)
@@ -219,7 +219,7 @@ namespace Tesselation
         public List<TilePlacer> tilePlacers = new List<TilePlacer>();
         public ConcurrentBag<Shape> placedshapes = new ConcurrentBag<Shape>();
         public Shape placingshape;
-        public int squaresize = 45;
+        public float squaresize = 45;
         bool cantplace = true;
         public Bitmap canvasdata;
         bool isupdatingbitmap;
@@ -236,7 +236,7 @@ namespace Tesselation
             bitmapqueue--;
             Graphics g = Graphics.FromImage(canvasdata);
             
-            List<Point> points = new List<Point>();
+            List<PointF> points = new List<PointF>();
             foreach (var tile in shape.data.tiles)
             {
                 bool tileright = false;
@@ -298,18 +298,19 @@ namespace Tesselation
                 else
                 {
                     g.FillRectangle(new Pen(Color.White).Brush, (shape.data.location.X + tile.x) * squaresize + leftoffset, (shape.data.location.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
+                    g.DrawRectangle(new Pen(Color.Black), (shape.data.location.X + tile.x) * squaresize + leftoffset, (shape.data.location.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
                 }
             }
             points = points.Distinct().ToList();
             points = OrderPoints(points, shape.data.tiles);
             for (int i = 0; i < points.Count(); ++i)
             {
-                int newx = (points[i].X + shape.data.location.X) * squaresize + leftoffset;
-                int newy = (points[i].Y + shape.data.location.Y) * squaresize + topoffset;
-                points[i] = new Point(newx, newy);
+                float newx = (points[i].X + shape.data.location.X) * squaresize + leftoffset;
+                float newy = (points[i].Y + shape.data.location.Y) * squaresize + topoffset;
+                points[i] = new PointF(newx, newy);
                 //e.Graphics.FillEllipse(new Pen(Color.Purple).Brush, new Rectangle(newx-4, newy-4, 8, 8));
             }
-            g.DrawPolygon(new Pen(Color.Black, 2), points.ToArray());
+            g.DrawPolygon(new Pen(Color.Black, 1), points.ToArray());
             isupdatingbitmap = false;
         }
         bool drawingbitmap;
@@ -331,19 +332,19 @@ namespace Tesselation
             renderms = (long)(renderstopwatch.ElapsedTicks/(double)10000);
         }
         long renderms;
-        private List<Point> OrderPoints(List<Point> points, List<Tile> tiles)
+        private List<PointF> OrderPoints(List<PointF> points, List<Tile> tiles)
         {
-            List<Point> result = new List<Point>();
-            Point last = points.OrderByDescending(p => p.Y).OrderByDescending(p => p.X).FirstOrDefault();
+            List<PointF> result = new List<PointF>();
+            PointF last = points.OrderByDescending(p => p.Y).OrderByDescending(p => p.X).FirstOrDefault();
             result.Add(last);
             points.Remove(last);
 
             while (true)
             {
-                Point up = new Point(-1, -1);
-                Point down = new Point(-1, -1);
-                Point left = new Point(-1, -1);
-                Point right = new Point(-1, -1);
+                PointF up = new Point(-1, -1);
+                PointF down = new Point(-1, -1);
+                PointF left = new Point(-1, -1);
+                PointF right = new Point(-1, -1);
 
                 foreach (var p in points)
                 {
@@ -418,15 +419,15 @@ namespace Tesselation
         {
             if (!(placingshape is null))
             {
-                int tilex = (canvas.PointToClient(Cursor.Position).X - leftoffset) / squaresize;
-                int tiley = (canvas.PointToClient(Cursor.Position).Y - topoffset) / squaresize;
+                int tilex = (int)((canvas.PointToClient(Cursor.Position).X - leftoffset) / squaresize);
+                int tiley = (int)((canvas.PointToClient(Cursor.Position).Y - topoffset) / squaresize);
                 placingtile = new Point(tilex, tiley);
                 canvas.Invalidate();
             }
             if (deleting)
             {
-                int localx = (canvas.PointToClient(Cursor.Position).X - leftoffset) / squaresize;
-                int localy = (canvas.PointToClient(Cursor.Position).Y - topoffset) / squaresize;
+                int localx = (int)((canvas.PointToClient(Cursor.Position).X - leftoffset) / squaresize);
+                int localy = (int)((canvas.PointToClient(Cursor.Position).Y - topoffset) / squaresize);
 
                 Shape hover = placedshapes.FirstOrDefault(s => s.data.tiles.Any(t => t.x + s.data.location.X == localx && t.y + s.data.location.Y == localy));
 
