@@ -113,7 +113,7 @@ namespace Tesselation
                     }
                 }
 
-                const int rendermiliseconds = 20;
+                const int rendermiliseconds = 50;
                 movesperrender++;
                 if (s.ElapsedMilliseconds > rendermiliseconds)
                 {
@@ -186,6 +186,7 @@ namespace Tesselation
                 double movegenms = movegentime / (double)10000;
 
                 label1.Text = $"Totaltime:{milis}\nboardresettime:{boardresettimems}\nblacklisttesttime:{blacklisttestms}\ncanplacetime:{canplacems}\nsideareatime:{sideareams}";
+                label1.Refresh();
                 mapFiller.boardresettime = 0;
                 mapFiller.blacklisttesttime = 0;
                 mapFiller.canplacetime = 0;

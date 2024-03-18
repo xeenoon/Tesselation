@@ -88,7 +88,7 @@ namespace Tesselation
 
             bool cansum = CanSumToTarget(potentialshapes.Select(s => s.data.tiles.Count).Distinct().ToArray(), totalmoves.Count);
             int mosttouching = 0;
-            if (reducedmoves.Count() >= 1 && ((totalmoves.Count > 50) || cansum))
+            if (reducedmoves.Count() >= 1 && ((totalmoves.Count > 50) || cansum) && AreaCount(board, width, height) <= 1)
             {
                 //check if a possible combination could theoretically exist
                 List<Shape> shaperotations = potentialshapes.SelectMany(s => s.rotations).ToList();
