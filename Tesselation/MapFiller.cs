@@ -80,9 +80,6 @@ namespace Tesselation
             List<MoveData> potentialmoves = new List<MoveData>();
             var totalmoves = FindEmptyArea(board, width, height);
             var reducedmoves = FindSideAreas(placedshapes, board);
-            if (reducedmoves.Count == 0) 
-            {
-            }
             Random r = new Random();
             Board boardcopy = new Board(width, height);
 

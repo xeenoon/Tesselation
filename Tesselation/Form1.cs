@@ -107,7 +107,7 @@ namespace Tesselation
                     {
                         Shape lookfor = placedshapes.FirstOrDefault(s => s.data.location.X == moves[0].shape.location.X &&
                                                              s.data.location.Y == moves[0].shape.location.Y);
-                        UpdateBitmap(new Shape(moves[0].shape), false);
+                        new Thread(() => UpdateBitmap(new Shape(moves[0].shape), false)).Start();
                         bool taken = false;
                         do
                         {
@@ -125,7 +125,7 @@ namespace Tesselation
                     {
                         var bestmove = moves[r.Next(0,moves.Count)];
                         placedshapes.Add(new Shape(bestmove.shape));
-                        UpdateBitmap(new Shape(bestmove.shape), true);
+                        new Thread(() => UpdateBitmap(new Shape(bestmove.shape), true)).Start();
 
                         foreach (var tile in bestmove.shape.tiles)
                         {
@@ -136,7 +136,7 @@ namespace Tesselation
                     }
                 }
 
-                const int rendermiliseconds = 50;
+                const int rendermiliseconds = 0;
                 movesperrender++;
                 if (s.ElapsedMilliseconds > rendermiliseconds)
                 {
@@ -208,7 +208,7 @@ namespace Tesselation
                 double canplacems = mapFiller.canplacetime / (double)10000;
                 double movegenms = movegentime / (double)10000;
 
-                label1.Text = $"Totaltime:{milis}\nboardresettime:{boardresettimems}\nblacklisttesttime:{blacklisttestms}\ncanplacetime:{canplacems}\nrendertime:{renderms}";
+                label1.Text = $"Totaltime:{milis}\nboardresettime:{boardresettimems}\nblacklisttesttime:{blacklisttestms}\ncanplacetime:{canplacems}\nlosttime:{movegenms-milis}";
                 label1.Refresh();
                 mapFiller.boardresettime = 0;
                 mapFiller.blacklisttesttime = 0;
