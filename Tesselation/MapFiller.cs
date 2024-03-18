@@ -71,7 +71,7 @@ namespace Tesselation
 
         public List<MoveData> GenerateMoves()
         {
-            debugtimer.Restart();
+           debugtimer.Restart();
 
             var precalcmoves = visitedboards.FirstOrDefault(bm => bm.board.IsEqual(board));
             if (!(precalcmoves is null))
@@ -89,7 +89,7 @@ namespace Tesselation
 
             bool cansum = CanSumToTarget(potentialshapes.Select(s => s.data.tiles.Count).Distinct().ToArray(), totalmoves);
             int mosttouching = 0;
-            if (reducedmoves.Count() >= 1 && ((totalmoves > 50) || cansum) && areacount <= 1)
+            if (reducedmoves.Count() >= 1 && ((totalmoves > 50) || cansum))// && areacount <= 1)
             {
                 //check if a possible combination could theoretically exist
                 List<Shape> shaperotations = potentialshapes.SelectMany(s => s.rotations).ToList();
@@ -102,7 +102,7 @@ namespace Tesselation
                     {
                         foreach (var potentialanchor in shape.data.tiles)
                         {
-                            debugtimer.Restart();
+                            //debugtimer.Restart();
                             var placedposition = new Point(emptyspace.X - potentialanchor.x, emptyspace.Y - potentialanchor.y);
                             bool canplace = true;
                             for (int i = 0; i < shape.data.tiles.Count; ++i)
@@ -184,7 +184,7 @@ namespace Tesselation
             {
                 adjacentshapes.Clear();
             }
-            else if (adjacentshapes.Count == 0)
+            else if (areacount==1 && adjacentshapes.Count == 0)
             {
                 //instead of backtracing, try to remove side pieces
                 adjacentshapes = placedshapes.Where(shape => shape.data.touchingsquares.Any(touchingtile =>
