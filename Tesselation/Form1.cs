@@ -207,12 +207,16 @@ namespace Tesselation
                 double blacklisttestms = mapFiller.blacklisttesttime / (double)10000;
                 double canplacems = mapFiller.canplacetime / (double)10000;
                 double movegenms = movegentime / (double)10000;
+                double preptimems = mapFiller.preptime / (double)10000;
+                double wraptimems = mapFiller.wraptime / (double)10000;
 
-                label1.Text = $"Totaltime:{milis}\nboardresettime:{boardresettimems}\nblacklisttesttime:{blacklisttestms}\ncanplacetime:{canplacems}\nlosttime:{movegenms-milis}";
+                label1.Text = $"Totaltime:{milis}\nboardresettime:{boardresettimems}\nblacklisttesttime:{blacklisttestms}\ncanplacetime:{canplacems}\npreptime:{preptimems}\nwraptime:{wraptimems}\nlosttime:{movegenms - (canplacems+blacklisttestms+boardresettimems + preptimems + wraptimems)}";
                 label1.Refresh();
                 mapFiller.boardresettime = 0;
                 mapFiller.blacklisttesttime = 0;
                 mapFiller.canplacetime = 0;
+                mapFiller.preptime = 0;
+                mapFiller.wraptime = 0;
             }
         }
 

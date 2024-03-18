@@ -66,7 +66,8 @@ namespace Tesselation
         public long boardresettime;
         public long blacklisttesttime;
         public long canplacetime;
-        public long sideareatime;
+        public long preptime;
+        public long wraptime;
 
         public List<MoveData> GenerateMoves()
         {
@@ -77,20 +78,23 @@ namespace Tesselation
             {
                 return precalcmoves.moves;
             }
+
             List<MoveData> potentialmoves = new List<MoveData>();
-            var totalmoves = FindEmptyArea(board, width, height);
+            int[] movedata = FindEmptyAreas(board, width, height);
+            var totalmoves = movedata[0];
+            var areacount  = movedata[1];
             var reducedmoves = FindSideAreas(placedshapes, board);
             Random r = new Random();
             Board boardcopy = new Board(width, height);
 
-            bool cansum = CanSumToTarget(potentialshapes.Select(s => s.data.tiles.Count).Distinct().ToArray(), totalmoves.Count);
+            bool cansum = CanSumToTarget(potentialshapes.Select(s => s.data.tiles.Count).Distinct().ToArray(), totalmoves);
             int mosttouching = 0;
-            if (reducedmoves.Count() >= 1 && ((totalmoves.Count > 50) || cansum) && AreaCount(board, width, height) <= 1)
+            if (reducedmoves.Count() >= 1 && ((totalmoves > 50) || cansum) && areacount <= 1)
             {
                 //check if a possible combination could theoretically exist
                 List<Shape> shaperotations = potentialshapes.SelectMany(s => s.rotations).ToList();
                 debugtimer.Stop();
-                sideareatime += debugtimer.ElapsedTicks;
+                preptime += debugtimer.ElapsedTicks;
 
                 foreach (var shape in shaperotations)
                 {
@@ -117,10 +121,10 @@ namespace Tesselation
 
                             if (canplace)
                             {
+                                debugtimer.Restart();
                                 //place the piece
                                 var copy = shape.PlaceData(placedposition);
                                 //var tempcopy = new Board(board);
-                                debugtimer.Restart();
                                 foreach (var tile in copy.tiles)
                                 {
                                     board.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
@@ -132,7 +136,7 @@ namespace Tesselation
 
                                 if (touchingsquares >= mosttouching && !blacklistedboards.Any(b => b.IsEqual(board)))
                                 {
-                                    if (totalmoves.Count >= 50 || AreaCount(board, width, height) <= 1)
+                                    if (totalmoves >= 50 || AreaCount(board, width, height) <= 1)
                                     //Dont split up areas when solving at end
                                     {
                                         if (touchingsquares > mosttouching)
@@ -159,6 +163,7 @@ namespace Tesselation
                         }
                     }
                 }
+                debugtimer.Restart();
                 if (potentialmoves.Count >= 1)
                 {
                     memcpy(boardcopy.data, board.data, board.size);
@@ -167,13 +172,15 @@ namespace Tesselation
                         visitedboards.RemoveAt(0); //Avoid memory issues
                     }
                     visitedboards.Add(new BoardMoves(boardcopy, potentialmoves));
+                    debugtimer.Stop();
+                    wraptime += debugtimer.ElapsedTicks;
                     return potentialmoves;
                 }
             }
             //Found no legal moves? Backtrace if there were many moves available, as it is likely that the problem was caused by the last piece placed
             Shape toremove;
             //Use normal backtracing to remove two areas if possible
-            if (totalmoves.Count > 20)
+            if (totalmoves > 20)
             {
                 adjacentshapes.Clear();
             }
@@ -181,7 +188,7 @@ namespace Tesselation
             {
                 //instead of backtracing, try to remove side pieces
                 adjacentshapes = placedshapes.Where(shape => shape.data.touchingsquares.Any(touchingtile =>
-                totalmoves.Contains(new Point(shape.data.location.X + touchingtile.X, shape.data.location.Y + touchingtile.Y)))).ToList();
+                reducedmoves.Contains(new Point(shape.data.location.X + touchingtile.X, shape.data.location.Y + touchingtile.Y)))).ToList();
 
                 foreach (var shape in adjacentshapes.OrderBy(a=>a.data.location.X))
                 {
@@ -204,6 +211,9 @@ namespace Tesselation
                 boardsoftcopy.ClearBit(tile.x + toremove.data.location.X ,tile.y + toremove.data.location.Y);
             }
             visitedboards.RemoveAll(v => v.board.IsEqual(boardsoftcopy));
+            debugtimer.Stop();
+            wraptime += debugtimer.ElapsedTicks;
+
             return potentialmoves;
         }
 
@@ -251,9 +261,9 @@ namespace Tesselation
             return result;
         }
 
-        static List<Point> FindEmptyArea(Board board, int width, int height)
+        static int[] FindEmptyAreas(Board board, int width, int height)
         {
-            List<List<Point>> emptyAreas = new List<List<Point>>();
+            List<int> emptyAreas = new List<int>();
 
             bool[] visited = new bool[width * height];
 
@@ -263,32 +273,13 @@ namespace Tesselation
                 {
                     if (board.GetData(x,y) == false && !visited[x + y * width])
                     {
-                        List<Point> emptyArea = new List<Point>();
-                        DFS(board, x, y, width, height, visited, emptyArea);
-                        emptyAreas.Add(emptyArea);
+                        int areasize = 0;
+                        DFS(board, x, y, width, height, visited, ref areasize);
+                        emptyAreas.Add(areasize);
                     }
                 }
             }
-
-            // Filter out only the smallest areas
-            int minAreaSize = int.MaxValue;
-            List<Point> smallestArea = new List<Point>();
-
-            foreach (var area in emptyAreas)
-            {
-                if (area.Count < minAreaSize)
-                {
-                    smallestArea.Clear();
-                    smallestArea = area;
-                    minAreaSize = area.Count;
-                }
-                else if (area.Count == minAreaSize)
-                {
-                    smallestArea = area;
-                }
-            }
-
-            return smallestArea;
+            return new int[2] { emptyAreas.OrderBy(e => e).FirstOrDefault(), emptyAreas.Count};
         }
         static int AreaCount(Board board, int width, int height)
         {
@@ -301,8 +292,8 @@ namespace Tesselation
                 {
                     if (board.GetData(x, y) == false && !visited[x + y * width])
                     {
-                        List<Point> emptyArea = new List<Point>();
-                        DFS(board, x, y, width, height, visited, emptyArea);
+                        int temp = 0;
+                        DFS(board, x, y, width, height, visited, ref temp);
                         ++areacount;
                     }
                 }
@@ -333,6 +324,37 @@ namespace Tesselation
 
                 visited[x + y * width] = true;
                 emptyArea.Add(new Point(x, y));
+
+                // Push neighboring cells onto the stack
+                stack.Push(new Point(x + 1, y));
+                stack.Push(new Point(x - 1, y));
+                stack.Push(new Point(x, y + 1));
+                stack.Push(new Point(x, y - 1));
+            }
+        }
+        static void DFS(Board board, int startX, int startY, int width, int height, bool[] visited, ref int result, int distancelimit = int.MaxValue)
+        {
+            if (visited[startX + startY * width])
+            {
+                return;
+            }
+            Stack<Point> stack = new Stack<Point>();
+            stack.Push(new Point(startX, startY));
+
+            while (stack.Count > 0)
+            {
+                Point current = stack.Pop();
+                int x = current.X;
+                int y = current.Y;
+
+                if (x < 0 || x >= width || y < 0 || y >= height || visited[x + y * width] || board.GetData(x, y) == true ||
+                    Math.Abs(startX - x) >= distancelimit || Math.Abs(startY - y) >= distancelimit)
+                {
+                    continue;
+                }
+
+                visited[x + y * width] = true;
+                ++result;
 
                 // Push neighboring cells onto the stack
                 stack.Push(new Point(x + 1, y));
