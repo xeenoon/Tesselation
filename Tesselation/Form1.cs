@@ -90,7 +90,11 @@ namespace Tesselation
                     {
                         Shape lookfor = placedshapes.FirstOrDefault(s => s.data.location.X == moves[0].shape.location.X &&
                                                              s.data.location.Y == moves[0].shape.location.Y);
-                        placedshapes.TryTake(out lookfor);
+                        bool taken = false;
+                        do
+                        {
+                            taken = placedshapes.TryTake(out lookfor);
+                        } while (!taken);
 
                         foreach (var tile in moves[0].shape.tiles)
                         {
@@ -136,6 +140,7 @@ namespace Tesselation
                 {
                     totaltimer.Stop();
                     totaltime += totaltimer.ElapsedMilliseconds;
+                    while (s.ElapsedMilliseconds < rendermiliseconds) { } //Wait to render
                     canvas.Invalidate();
                     return; //issolved
                 }
@@ -182,15 +187,13 @@ namespace Tesselation
                 double boardresettimems = mapFiller.boardresettime / (double)10000;
                 double blacklisttestms = mapFiller.blacklisttesttime / (double)10000;
                 double canplacems = mapFiller.canplacetime / (double)10000;
-                double sideareams = mapFiller.sideareatime / (double)10000;
                 double movegenms = movegentime / (double)10000;
 
-                label1.Text = $"Totaltime:{milis}\nboardresettime:{boardresettimems}\nblacklisttesttime:{blacklisttestms}\ncanplacetime:{canplacems}\nsideareatime:{sideareams}";
+                label1.Text = $"Totaltime:{milis}\nboardresettime:{boardresettimems}\nblacklisttesttime:{blacklisttestms}\ncanplacetime:{canplacems}\nrendertime:{renderms}";
                 label1.Refresh();
                 mapFiller.boardresettime = 0;
                 mapFiller.blacklisttesttime = 0;
                 mapFiller.canplacetime = 0;
-                mapFiller.sideareatime = 0;
             }
         }
 
@@ -199,9 +202,11 @@ namespace Tesselation
         public Shape placingshape;
         public int squaresize = 45;
         bool cantplace = true;
-
+        
         public void CanvasPaint(object sender, PaintEventArgs e)
         {
+            Stopwatch renderstopwatch = new Stopwatch();
+            renderstopwatch.Restart();
             squaresize = Math.Min((menusplit.Panel1.Width - (leftoffset + rightoffset)) / horizontalsquares, (Height - heightoffset) / verticalsquares);
 
             for (int x = 0; x < horizontalsquares; ++x)
@@ -213,7 +218,11 @@ namespace Tesselation
             }
 
             //Copy incase of multithread issue
-            foreach (var shape in placedshapes.ToList())
+            var copy = new List<Shape>();
+            foreach (var shape in placedshapes.ToList()) { copy.Add(shape.Place(shape.data.location)); }
+            //.CopyTo copies pointers instead of data ;(
+            
+            foreach (var shape in copy)
             {
                 List<Point> points = new List<Point>();
                 foreach (var tile in shape.data.tiles)
@@ -324,8 +333,10 @@ namespace Tesselation
                 new Thread(() => MessageBox.Show(string.Format("Completed board size of [{0},{1}] in {2} miliseconds", horizontalsquares, verticalsquares, cache))).Start();
                 totaltime = 0;
             }
+            renderstopwatch.Stop();
+            renderms = (long)(renderstopwatch.ElapsedTicks/(double)10000);
         }
-
+        long renderms;
         private List<Point> OrderPoints(List<Point> points, List<Tile> tiles)
         {
             List<Point> result = new List<Point>();
