@@ -195,6 +195,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1209, 717);
             Controls.Add(splitContainer1);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Form1";
