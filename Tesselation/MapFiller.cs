@@ -89,7 +89,7 @@ namespace Tesselation
 
             bool cansum = CanSumToTarget(potentialshapes.Select(s => s.data.tiles.Count).Distinct().ToArray(), totalmoves);
             int mosttouching = 0;
-            if (reducedmoves.Count() >= 1 && ((totalmoves > 50) || cansum))// && areacount <= 1)
+            if (reducedmoves.Count() >= 1 && ((totalmoves > 50) || cansum) && areacount <= 1)
             {
                 //check if a possible combination could theoretically exist
                 List<Shape> shaperotations = potentialshapes.SelectMany(s => s.rotations).ToList();
@@ -180,20 +180,25 @@ namespace Tesselation
             //Found no legal moves? Backtrace if there were many moves available, as it is likely that the problem was caused by the last piece placed
             Shape toremove;
             //Use normal backtracing to remove two areas if possible
-            if (totalmoves > 20)
+            if (areacount == 1) 
             {
-                adjacentshapes.Clear();
-            }
-            else if (areacount==1 && adjacentshapes.Count == 0)
-            {
-                //instead of backtracing, try to remove side pieces
-                adjacentshapes = placedshapes.Where(shape => shape.data.touchingsquares.Any(touchingtile =>
-                reducedmoves.Contains(new Point(shape.data.location.X + touchingtile.X, shape.data.location.Y + touchingtile.Y)))).ToList();
-
-                foreach (var shape in adjacentshapes.OrderBy(a=>a.data.location.X))
+                if (totalmoves > 20)
                 {
-                    placedshapes.Remove(shape);
-                    placedshapes.Add(shape); //Push to end of list;
+                    adjacentshapes.Clear();
+                }
+                else if (adjacentshapes.Count == 0)
+                {
+                    var smallestarea = FindEmptyArea(board, width, height);
+                    //instead of backtracing, try to remove side pieces
+                    adjacentshapes = placedshapes.Where(shape => 
+                    shape.data.touchingsquares.Any(touchingtile =>
+                    smallestarea.Contains(new Point(shape.data.location.X + touchingtile.X, shape.data.location.Y + touchingtile.Y)))).ToList();
+
+                    foreach (var shape in adjacentshapes.OrderBy(a => a.data.location.X))
+                    {
+                        placedshapes.Remove(shape);
+                        placedshapes.Add(shape); //Push to end of list;
+                    }
                 }
             }
             toremove = placedshapes.Last();
@@ -252,7 +257,12 @@ namespace Tesselation
                 int persquareresard = 1; //Reward AI for having one tile connect to more other tiles
                 int x = point.X + position.X;
                 int y = point.Y + position.Y;
-                if (x >= width || y>=height || x < 0 || y < 0 || board.GetData(x,y))
+                if (x >= width || y >= height || x < 0 || y < 0)
+                {
+                    result += persquareresard*2;
+                    persquareresard += 2;
+                }
+                else if (board.GetData(x, y))
                 {
                     result += persquareresard;
                     persquareresard += 2;
@@ -280,6 +290,26 @@ namespace Tesselation
                 }
             }
             return new int[2] { emptyAreas.OrderBy(e => e).FirstOrDefault(), emptyAreas.Count};
+        }
+        static List<Point> FindEmptyArea(Board board, int width, int height)
+        {
+            List<List<Point>> emptyAreas = new List<List<Point>>();
+
+            bool[] visited = new bool[width * height];
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    if (board.GetData(x, y) == false && !visited[x + y * width])
+                    {
+                        var list = new List<Point>();
+                        emptyAreas.Add(list);
+                        DFS(board, x, y, width, height, visited, list);
+                    }
+                }
+            }
+            return emptyAreas.OrderBy(a => a.Count()).FirstOrDefault();
         }
         static int AreaCount(Board board, int width, int height)
         {
