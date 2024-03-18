@@ -107,7 +107,7 @@ namespace Tesselation
                     {
                         Shape lookfor = placedshapes.FirstOrDefault(s => s.data.location.X == moves[0].shape.location.X &&
                                                              s.data.location.Y == moves[0].shape.location.Y);
-                        new Thread(() => UpdateBitmap(new Shape(moves[0].shape), false)).Start();
+                        new Thread(() => UpdateBitmap(new PlacingData(new Shape(moves[0].shape), false))).Start();
                         bool taken = false;
                         do
                         {
@@ -125,7 +125,7 @@ namespace Tesselation
                     {
                         var bestmove = moves[r.Next(0,moves.Count)];
                         placedshapes.Add(new Shape(bestmove.shape));
-                        new Thread(() => UpdateBitmap(new Shape(bestmove.shape), true)).Start();
+                        new Thread(() => UpdateBitmap(new PlacingData(new Shape(bestmove.shape), true))).Start();
 
                         foreach (var tile in bestmove.shape.tiles)
                         {
@@ -227,17 +227,29 @@ namespace Tesselation
         bool cantplace = true;
         public Bitmap canvasdata;
         bool isupdatingbitmap;
-        int bitmapqueue = 0;
-        public void UpdateBitmap(Shape shape, bool placing)
+        Stack<PlacingData> queue = new Stack<PlacingData>();
+        public struct PlacingData
+        {
+            public Shape shape;
+            public bool placing;
+
+            public PlacingData(Shape shape, bool placing)
+            {
+                this.shape = shape;
+                this.placing = placing;
+            }
+        }
+        public void UpdateBitmap(PlacingData data)
         {
             if (isupdatingbitmap) 
             {
-                bitmapqueue++;
-                while (isupdatingbitmap) { } //Wait for image write threads
+                queue.Push(data);
+                return;
             }
             isupdatingbitmap = true;
             while (drawingbitmap) { } //Wait for image read threads
-            bitmapqueue--;
+            var shape = data.shape;
+            var placing = data.placing;
             Graphics g = Graphics.FromImage(canvasdata);
             
             List<PointF> points = new List<PointF>();
@@ -316,13 +328,17 @@ namespace Tesselation
             }
             g.DrawPolygon(new Pen(Color.Black, 1), points.ToArray());
             isupdatingbitmap = false;
+            if (queue.Count >= 1)
+            {
+                UpdateBitmap(queue.Pop());
+            }
         }
         bool drawingbitmap;
         public void CanvasPaint(object sender, PaintEventArgs e)
         {
             Stopwatch renderstopwatch = new Stopwatch();
             renderstopwatch.Restart();
-            while (isupdatingbitmap || bitmapqueue>=1) { } //Wait for threads to finish operations
+            while (drawingbitmap || isupdatingbitmap || queue.Count>=1) { } //Wait for threads to finish operations
             drawingbitmap = true;
             e.Graphics.DrawImage(canvasdata,0,0,canvas.Width, canvas.Height);
             drawingbitmap = false;
