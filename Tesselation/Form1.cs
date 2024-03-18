@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.DirectoryServices.ActiveDirectory;
 using System.Runtime.InteropServices;
 using System.Security.Policy;
 using System.Windows.Forms;
@@ -58,9 +59,26 @@ namespace Tesselation
                     tilePlacers.Add(new TilePlacer(shape, new Rectangle(rectx, recty, 150, 150)));
                 }
             }
+            InitializeBoard();
             AIAsyncMove.Elapsed += AIMove;
             mapFiller = new MapFiller(horizontalsquares, verticalsquares, tilePlacers.Select(t => t.shape).ToList());
         }
+
+        private void InitializeBoard()
+        {
+            squaresize = (int)Math.Min((menusplit.Panel1.Width - (leftoffset + rightoffset)) / (double)horizontalsquares, (Height - heightoffset) / (double)verticalsquares);
+            canvasdata = new Bitmap(canvas.Width, canvas.Height);
+            var g = Graphics.FromImage(canvasdata);
+            for (int x = 0; x < horizontalsquares; ++x)
+            {
+                for (int y = 0; y < verticalsquares; ++y)
+                {
+                    g.DrawRectangle(new Pen(Color.Black, 1), x * squaresize + leftoffset, y * squaresize + topoffset, squaresize, squaresize);
+                }
+            }
+            g.Dispose();
+        }
+
         System.Timers.Timer AIAsyncMove = new System.Timers.Timer(1);
         MapFiller mapFiller;
         bool paintfinished = false;
@@ -69,7 +87,6 @@ namespace Tesselation
         Random r = new Random();
         public void AIMove(object sender, EventArgs e)
         {
-            //DebugDump(mapFiller);
             int iterations = 0;
             Stopwatch totaltimer = new Stopwatch();
             totaltimer.Start();
@@ -90,6 +107,7 @@ namespace Tesselation
                     {
                         Shape lookfor = placedshapes.FirstOrDefault(s => s.data.location.X == moves[0].shape.location.X &&
                                                              s.data.location.Y == moves[0].shape.location.Y);
+                        UpdateBitmap(new Shape(moves[0].shape), false);
                         bool taken = false;
                         do
                         {
@@ -107,6 +125,7 @@ namespace Tesselation
                     {
                         var bestmove = moves[r.Next(0,moves.Count)];
                         placedshapes.Add(new Shape(bestmove.shape));
+                        UpdateBitmap(new Shape(bestmove.shape), true);
 
                         foreach (var tile in bestmove.shape.tiles)
                         {
@@ -202,131 +221,106 @@ namespace Tesselation
         public Shape placingshape;
         public int squaresize = 45;
         bool cantplace = true;
-        
+        public Bitmap canvasdata;
+        bool isupdatingbitmap;
+        int bitmapqueue = 0;
+        public void UpdateBitmap(Shape shape, bool placing)
+        {
+            if (isupdatingbitmap) 
+            {
+                bitmapqueue++;
+                while (isupdatingbitmap) { } //Wait for image write threads
+            }
+            isupdatingbitmap = true;
+            while (drawingbitmap) { } //Wait for image read threads
+            bitmapqueue--;
+            Graphics g = Graphics.FromImage(canvasdata);
+            
+            List<Point> points = new List<Point>();
+            foreach (var tile in shape.data.tiles)
+            {
+                bool tileright = false;
+                bool tileleft = false;
+                bool tileup = false;
+                bool tiledown = false;
+
+                if (shape.data.tiles.Any(t => t.x == tile.x && t.y == tile.y - 1))
+                {
+                    //Tile above, dont shrink
+                    tileup = true;
+                }
+                if (shape.data.tiles.Any(t => t.x == tile.x && t.y == tile.y + 1))
+                {
+                    //Tile below, dont shrink
+                    tiledown = true;
+                }
+                if (shape.data.tiles.Any(t => t.x == tile.x - 1 && t.y == tile.y))
+                {
+                    //Tile left, dont shrink
+                    tileleft = true;
+                }
+                if (shape.data.tiles.Any(t => t.x == tile.x + 1 && t.y == tile.y))
+                {
+                    //Tile right, dont shrink
+                    tileright = true;
+                }
+
+                if (!tileleft)
+                {
+                    points.Add(new Point(tile.x, tile.y));
+                    points.Add(new Point(tile.x, tile.y + 1));
+                }
+                if (!tileright)
+                {
+                    points.Add(new Point(tile.x + 1, tile.y));
+                    points.Add(new Point(tile.x + 1, tile.y + 1));
+                }
+                if (!tileup)
+                {
+                    points.Add(new Point(tile.x, tile.y));
+                    points.Add(new Point(tile.x + 1, tile.y));
+                }
+                if (!tiledown)
+                {
+                    points.Add(new Point(tile.x, tile.y + 1));
+                    points.Add(new Point(tile.x + 1, tile.y + 1));
+                }
+
+                Color drawcolor = shape.data.color;
+                if (deletingshape == shape.data.location)
+                {
+                    drawcolor = Color.Red;
+                }
+                if (placing) 
+                {
+                    g.FillRectangle(new Pen(drawcolor).Brush, (shape.data.location.X + tile.x) * squaresize + leftoffset, (shape.data.location.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
+                }
+                else
+                {
+                    g.FillRectangle(new Pen(Color.White).Brush, (shape.data.location.X + tile.x) * squaresize + leftoffset, (shape.data.location.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
+                }
+            }
+            points = points.Distinct().ToList();
+            points = OrderPoints(points, shape.data.tiles);
+            for (int i = 0; i < points.Count(); ++i)
+            {
+                int newx = (points[i].X + shape.data.location.X) * squaresize + leftoffset;
+                int newy = (points[i].Y + shape.data.location.Y) * squaresize + topoffset;
+                points[i] = new Point(newx, newy);
+                //e.Graphics.FillEllipse(new Pen(Color.Purple).Brush, new Rectangle(newx-4, newy-4, 8, 8));
+            }
+            g.DrawPolygon(new Pen(Color.Black, 2), points.ToArray());
+            isupdatingbitmap = false;
+        }
+        bool drawingbitmap;
         public void CanvasPaint(object sender, PaintEventArgs e)
         {
             Stopwatch renderstopwatch = new Stopwatch();
             renderstopwatch.Restart();
-            squaresize = Math.Min((menusplit.Panel1.Width - (leftoffset + rightoffset)) / horizontalsquares, (Height - heightoffset) / verticalsquares);
-
-            for (int x = 0; x < horizontalsquares; ++x)
-            {
-                for (int y = 0; y < verticalsquares; ++y)
-                {
-                    e.Graphics.DrawRectangle(new Pen(Color.Black, 2), x * squaresize + leftoffset, y * squaresize + topoffset, squaresize, squaresize);
-                }
-            }
-
-            //Copy incase of multithread issue
-            var copy = new List<Shape>();
-            foreach (var shape in placedshapes.ToList()) { copy.Add(shape.Place(shape.data.location)); }
-            //.CopyTo copies pointers instead of data ;(
-            
-            foreach (var shape in copy)
-            {
-                List<Point> points = new List<Point>();
-                foreach (var tile in shape.data.tiles)
-                {
-                    bool tileright = false;
-                    bool tileleft = false;
-                    bool tileup = false;
-                    bool tiledown = false;
-
-                    if (shape.data.tiles.Any(t => t.x == tile.x && t.y == tile.y - 1))
-                    {
-                        //Tile above, dont shrink
-                        tileup = true;
-                    }
-                    if (shape.data.tiles.Any(t => t.x == tile.x && t.y == tile.y + 1))
-                    {
-                        //Tile below, dont shrink
-                        tiledown = true;
-                    }
-                    if (shape.data.tiles.Any(t => t.x == tile.x - 1 && t.y == tile.y))
-                    {
-                        //Tile left, dont shrink
-                        tileleft = true;
-                    }
-                    if (shape.data.tiles.Any(t => t.x == tile.x + 1 && t.y == tile.y))
-                    {
-                        //Tile right, dont shrink
-                        tileright = true;
-                    }
-
-                    if (!tileleft)
-                    {
-                        points.Add(new Point(tile.x, tile.y));
-                        points.Add(new Point(tile.x, tile.y + 1));
-                    }
-                    if (!tileright)
-                    {
-                        points.Add(new Point(tile.x + 1, tile.y));
-                        points.Add(new Point(tile.x + 1, tile.y + 1));
-                    }
-                    if (!tileup)
-                    {
-                        points.Add(new Point(tile.x, tile.y));
-                        points.Add(new Point(tile.x + 1, tile.y));
-                    }
-                    if (!tiledown)
-                    {
-                        points.Add(new Point(tile.x, tile.y + 1));
-                        points.Add(new Point(tile.x + 1, tile.y + 1));
-                    }
-
-                    Color drawcolor = shape.data.color;
-                    if (deletingshape == shape.data.location)
-                    {
-                        drawcolor = Color.Red;
-                    }
-
-                    e.Graphics.FillRectangle(new Pen(drawcolor).Brush, (shape.data.location.X + tile.x) * squaresize + leftoffset, (shape.data.location.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
-                }
-                points = points.Distinct().ToList();
-                points = OrderPoints(points, shape.data.tiles);
-                for (int i = 0; i < points.Count(); ++i)
-                {
-                    int newx = (points[i].X + shape.data.location.X) * squaresize + leftoffset;
-                    int newy = (points[i].Y + shape.data.location.Y) * squaresize + topoffset;
-                    points[i] = new Point(newx, newy);
-                    //e.Graphics.FillEllipse(new Pen(Color.Purple).Brush, new Rectangle(newx-4, newy-4, 8, 8));
-                }
-                e.Graphics.DrawPolygon(new Pen(Color.Black, 2), points.ToArray());
-            }
-
-
-            if (placingtile.X != -1 && !(placingshape is null))
-            {
-                Color previewcolor = Color.LightGreen;
-                if (placingshape.data.tiles.Any(t => t.x + placingtile.X >= horizontalsquares || t.y + placingtile.Y >= verticalsquares))
-                {
-                    previewcolor = Color.Red;
-                }
-                foreach (var shape in placedshapes)
-                {
-                    if (shape.data.tiles.Any(t2 => placingshape.data.tiles.Any(
-                        t => t2.x + shape.data.location.X == t.x + placingtile.X &&
-                        t2.y + shape.data.location.Y == t.y + placingtile.Y //Check for overwriting
-
-                        || (shape.data.color == placingshape.data.color && ((Math.Abs(t.x + placingtile.X - (t2.x + shape.data.location.X)) == 1 && t2.y + shape.data.location.Y == t.y + placingtile.Y)
-                        || (Math.Abs(t.y + placingtile.Y - (t2.y + shape.data.location.Y)) == 1 && t2.x + shape.data.location.X == t.x + placingtile.X)))
-                    )))
-                    {
-                        previewcolor = Color.Red;
-                        break;
-                    }
-                }
-                cantplace = previewcolor == Color.Red;
-                previewcolor = Color.FromArgb(200, previewcolor.R, previewcolor.G, previewcolor.B);
-                foreach (var tile in placingshape.data.tiles)
-                {
-                    if (tile.x + placingtile.X >= horizontalsquares || tile.y + placingtile.Y >= verticalsquares)
-                    {
-                        continue;
-                    }
-                    e.Graphics.FillRectangle(new Pen(previewcolor).Brush, (placingtile.X + tile.x) * squaresize + leftoffset, (placingtile.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
-                }
-            }
+            while (isupdatingbitmap || bitmapqueue>=1) { } //Wait for threads to finish operations
+            drawingbitmap = true;
+            e.Graphics.DrawImage(canvasdata,0,0,canvas.Width, canvas.Height);
+            drawingbitmap = false;
             if (totaltime >= 1)
             {
                 var cache = totaltime;
@@ -507,7 +501,7 @@ namespace Tesselation
         {
             horizontalsquares = int.Parse(textBox1.Text);
             verticalsquares = int.Parse(textBox2.Text);
-
+            InitializeBoard();
             pictureBox2_Click(sender, e);
 
             AIAsyncMove.AutoReset = false;
