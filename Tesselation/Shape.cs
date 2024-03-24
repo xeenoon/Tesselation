@@ -185,14 +185,9 @@ namespace Tesselation
         internal ShapeData PlaceData(Point placingtile)
         {
             ShapeData duplicate = new ShapeData(data.width, data.height, placingtile);
-            foreach (var tile in data.tiles)
-            {
-                duplicate.tiles.Add(new Tile(tile.x, tile.y));
-            }
-            foreach (var tile in data.touchingsquares)
-            {
-                duplicate.touchingsquares.Add(new Point(tile.X, tile.Y));
-            }
+            duplicate.tiles = data.tiles;
+            duplicate.touchingsquares = data.touchingsquares; //just pass around a reference
+
             duplicate.color = data.color;
             return duplicate;
         }

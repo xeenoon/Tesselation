@@ -115,7 +115,7 @@ namespace Tesselation
 
             return dp[targetSum];
         }
-        //Stopwatch debugtimer = new Stopwatch();
+        Stopwatch debugtimer = new Stopwatch();
         public long boardresettime;
         public long blacklisttesttime;
         public long canplacetime;
@@ -124,7 +124,7 @@ namespace Tesselation
 
         public List<MoveData> GenerateMoves()
         {
-            //debugtimer.Restart();
+            debugtimer.Restart();
 
             var precalcmoves = visitedboards.FirstOrDefault(bm => bm.board.IsEqual(board));
             if (!(precalcmoves is null))
@@ -146,8 +146,8 @@ namespace Tesselation
             {
                 //check if a possible combination could theoretically exist
                 List<Shape> shaperotations = potentialshapes.Shuffle().SelectMany(s => s.rotations).ToList();
-                //debugtimer.Stop();
-                //preptime += debugtimer.ElapsedTicks;
+                debugtimer.Stop();
+                preptime += debugtimer.ElapsedTicks;
 
                 foreach (var shape in shaperotations)
                 {
@@ -169,12 +169,12 @@ namespace Tesselation
                                 }
                             }
 
-                            //debugtimer.Stop();
-                            //canplacetime += debugtimer.ElapsedTicks;
+                           debugtimer.Stop();
+                            canplacetime += debugtimer.ElapsedTicks;
 
                             if (canplace)
                             {
-                                //debugtimer.Restart();
+                                debugtimer.Restart();
                                 //place the piece
                                 var copy = shape.PlaceData(placedposition);
                                 //var tempcopy = new Board(board);
@@ -182,9 +182,9 @@ namespace Tesselation
                                 {
                                     board.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
                                 }
-                                //debugtimer.Stop();
-                                //boardresettime += debugtimer.ElapsedTicks;
-                                //debugtimer.Restart();
+                                debugtimer.Stop();
+                                boardresettime += debugtimer.ElapsedTicks;
+                                debugtimer.Restart();
                                 int touchingsquares = FindTouchingSquares(shape, placedposition, board, finishedsides);
 
                                 if (touchingsquares >= mosttouching && !blacklistedboards.Any(b => b.IsEqual(board)))
@@ -205,8 +205,8 @@ namespace Tesselation
                                     }
                                 }
 
-                                //debugtimer.Stop();
-                                //blacklisttesttime += debugtimer.ElapsedTicks;
+                                debugtimer.Stop();
+                                blacklisttesttime += debugtimer.ElapsedTicks;
 
                                 //debugtimer.Restart();
                                 foreach (var tile in copy.tiles)
@@ -214,13 +214,13 @@ namespace Tesselation
                                     board.ClearBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
                                 }
 
-                                //debugtimer.Stop();
-                                //boardresettime += debugtimer.ElapsedTicks;
+                                debugtimer.Stop();
+                                boardresettime += debugtimer.ElapsedTicks;
                             }
                         }
                     }
                 }
-                //debugtimer.Restart();
+                debugtimer.Restart();
                 if (potentialmoves.Count >= 1)
                 {
                     memcpy(boardcopy.data, board.data, board.size);
@@ -273,8 +273,8 @@ namespace Tesselation
                 boardsoftcopy.ClearBit(tile.x + toremove.data.location.X ,tile.y + toremove.data.location.Y);
             }
             visitedboards.RemoveAll(v => v.board.IsEqual(boardsoftcopy));
-            //debugtimer.Stop();
-            //wraptime += debugtimer.ElapsedTicks;
+            debugtimer.Stop();
+            wraptime += debugtimer.ElapsedTicks;
 
             return potentialmoves;
         }
