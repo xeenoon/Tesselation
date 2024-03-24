@@ -155,7 +155,7 @@ namespace Tesselation
                     {
                         foreach (var potentialanchor in shape.data.tiles)
                         {
-                            //debugtimer.Restart();
+                            debugtimer.Restart();
                             var placedposition = new Point(emptyspace.X - potentialanchor.x, emptyspace.Y - potentialanchor.y);
                             bool canplace = true;
                             for (int i = 0; i < shape.data.tiles.Count; ++i)
@@ -166,16 +166,20 @@ namespace Tesselation
                                 if (newx >= width || newy >= height || newx <= -1 || newy <= -1 || board.GetData(newx, newy))
                                 {
                                     canplace = false;
+
+                                    debugtimer.Stop();
+                                    canplacetime += debugtimer.ElapsedTicks;
+                                    break;
                                 }
                             }
 
-                           debugtimer.Stop();
+                            debugtimer.Stop();
                             canplacetime += debugtimer.ElapsedTicks;
 
                             if (canplace)
                             {
-                                debugtimer.Restart();
                                 //place the piece
+                                debugtimer.Restart();
                                 var copy = shape.PlaceData(placedposition);
                                 //var tempcopy = new Board(board);
                                 foreach (var tile in copy.tiles)
@@ -208,7 +212,7 @@ namespace Tesselation
                                 debugtimer.Stop();
                                 blacklisttesttime += debugtimer.ElapsedTicks;
 
-                                //debugtimer.Restart();
+                                debugtimer.Restart();
                                 foreach (var tile in copy.tiles)
                                 {
                                     board.ClearBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
