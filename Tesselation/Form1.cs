@@ -114,8 +114,8 @@ namespace Tesselation
                         {
                             mapFiller.board.ClearBit(tile.x + moves[0].shape.location.X, (tile.y + moves[0].shape.location.Y));
                         }
-                        mapFiller.placedshapes.RemoveAll(s => s.data.location.X == moves[0].shape.location.X &&
-                                     s.data.location.Y == moves[0].shape.location.Y);
+
+                        mapFiller.RemoveShape(new Shape(moves[0].shape));
                     }
                     else
                     {
@@ -128,7 +128,7 @@ namespace Tesselation
                             mapFiller.board.SetBit(tile.x + bestmove.shape.location.X, (tile.y + bestmove.shape.location.Y));
                         }
 
-                        mapFiller.placedshapes.Add(new Shape(bestmove.shape));
+                        mapFiller.PlaceShape(new Shape(bestmove.shape));
                     }
                 }
 

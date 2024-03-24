@@ -23,7 +23,47 @@ namespace Tesselation
         public int width;
         public int height;
         public List<Shape> potentialshapes = new List<Shape>();
-        public List<Shape> placedshapes = new List<Shape>();
+        private List<Shape> placedshapes = new List<Shape>();
+        public void PlaceShape(Shape shape) 
+        { 
+            placedshapes.Add(shape);
+            foreach (var tile in shape.data.tiles)
+            {
+                emptysidetiles.Remove(new Point(tile.x + shape.data.location.X, tile.y + shape.data.location.Y));
+            }
+            foreach (var tile in shape.data.touchingsquares)
+            {
+                int x = tile.X + shape.data.location.X;
+                int y = tile.Y + shape.data.location.Y;
+                if (x >= -1 && x<width && y>= -1 && y < height)
+                {
+                    if (!board.GetData(x,y))
+                    {
+                        emptysidetiles.Add(new Point(x, y));
+                    }
+                }
+            }
+            emptysidetiles = emptysidetiles.Distinct().ToList();
+        }
+        public void RemoveShape(Shape shape)
+        {
+            placedshapes.RemoveAll(s=>s.data.location == shape.data.location); //Cant have two shapes at same location
+            foreach (var tile in shape.data.tiles)
+            {
+                int x = tile.x + shape.data.location.X;
+                int y = tile.y + shape.data.location.Y;
+                if (board.GetData(x + 1, y) ||
+                    board.GetData(x - 1, y) ||
+                    board.GetData(x, y - 1) ||
+                    board.GetData(x, y + 1))
+                {
+                    emptysidetiles.Add(new Point(x, y));
+                }
+            }
+            emptysidetiles = emptysidetiles.Distinct().ToList();
+            //Dont remove potential placements because it is difficult to determine if we would remove good moves
+        }
+        public List<Point> emptysidetiles = new List<Point>();
         public List<Shape> adjacentshapes = new List<Shape>();
 
         public Board board;
@@ -39,6 +79,17 @@ namespace Tesselation
             foreach (var tile in potentialshapes.SelectMany(s => s.data.tiles))
             {
                 board.ClearBit(tile.x, tile.y);
+            }
+
+            for (int i = 0; i < board.width; ++i)
+            {
+                emptysidetiles.Add(new Point(i, 0));
+                emptysidetiles.Add(new Point(i, height - 1));
+            }
+            for (int i = 0; i < board.height; ++i)
+            {
+                emptysidetiles.Add(new Point(0, i));
+                emptysidetiles.Add(new Point(width - 1, i));
             }
         }
 
@@ -84,13 +135,12 @@ namespace Tesselation
             var totalmoves = movedata[0];
             var areacount  = movedata[1];
             bool finishedsides = ScanSides();
-            var reducedmoves = FindSideAreas(placedshapes, board);
             Random r = new Random();
             Board boardcopy = new Board(width, height);
 
             bool cansum = CanSumToTarget(potentialshapes.Select(s => s.data.tiles.Count).Distinct().ToArray(), totalmoves);
             int mosttouching = 2;
-            if (reducedmoves.Count() >= 1 && ((totalmoves > 50) || cansum) && areacount <= 1)
+            if (emptysidetiles.Count() >= 1 && ((totalmoves > 50) || cansum) && areacount <= 1)
             {
                 //check if a possible combination could theoretically exist
                 List<Shape> shaperotations = potentialshapes.Shuffle().SelectMany(s => s.rotations).ToList();
@@ -99,7 +149,7 @@ namespace Tesselation
 
                 foreach (var shape in shaperotations)
                 {
-                    foreach (var emptyspace in reducedmoves)
+                    foreach (var emptyspace in emptysidetiles)
                     {
                         foreach (var potentialanchor in shape.data.tiles)
                         {
@@ -273,45 +323,6 @@ namespace Tesselation
                 }
             }
             return true;
-        }
-
-        private List<Point> FindSideAreas(List<Shape> placedshapes, Board board)
-        {
-            List<Point> result = new List<Point>();
-            List<int> count = new List<int>();
-            List<Point> toiterate = placedshapes.SelectMany(s=>s.data.touchingsquares.Select(ts=>new Point(ts.X + s.data.location.X, ts.Y + s.data.location.Y))).ToList();
-
-            //Add side of board
-            for (int i = 0; i < board.width; ++i)
-            {
-                toiterate.Add(new Point(i, 0));
-                toiterate.Add(new Point(i, height-1));
-            }
-            for (int i = 0; i < board.height; ++i)
-            {
-                toiterate.Add(new Point(0, i));
-                toiterate.Add(new Point(width-1, i));
-            }
-            foreach (var tile in toiterate)
-            {
-                if ((tile.X < 0 && tile.Y < 0 && tile.X >= width && tile.Y >= height) ||
-                    !board.GetData(tile.X, tile.Y))
-                {
-                    var point = new Point(tile.X, tile.Y);
-                    var existing = result.IndexOf(point);
-                    if (existing == -1)
-                    {
-                        result.Add(point);
-                        count.Add(1);
-                    }
-                    else
-                    {
-                        count[existing]++;
-                    }
-
-                }
-            }
-            return result;//.OrderByDescending(point=>count[result.IndexOf(point)]).ToList();
         }
 
         private int FindTouchingSquares(Shape copy, Point position, Board b, bool finishedsides)
