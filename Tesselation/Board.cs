@@ -69,6 +69,10 @@ namespace Tesselation
         }
         public void SetBit(int x, int y)
         {
+            if (x <= -1 || x >= width || y <= -1 || y >= height)
+            {
+                return;
+            }
             int idx = x + y * width;
             int byteidx = idx / 8;
             int bitoffset = idx % 8;
@@ -76,6 +80,10 @@ namespace Tesselation
         }
         public void ClearBit(int x, int y)
         {
+            if (x <= -1 || x >= width || y <= -1 || y >= height)
+            {
+                return;
+            }
             int idx = x + y * width;
             int byteidx = idx / 8;
             int bitoffset = idx % 8;

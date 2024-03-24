@@ -83,6 +83,7 @@ namespace Tesselation
             int[] movedata = FindEmptyAreas(board, width, height);
             var totalmoves = movedata[0];
             var areacount  = movedata[1];
+            bool finishedsides = ScanSides();
             var reducedmoves = FindSideAreas(placedshapes, board);
             Random r = new Random();
             Board boardcopy = new Board(width, height);
@@ -92,7 +93,7 @@ namespace Tesselation
             if (reducedmoves.Count() >= 1 && ((totalmoves > 50) || cansum) && areacount <= 1)
             {
                 //check if a possible combination could theoretically exist
-                List<Shape> shaperotations = potentialshapes.SelectMany(s => s.rotations).ToList();
+                List<Shape> shaperotations = potentialshapes.Shuffle().SelectMany(s => s.rotations).ToList();
                 debugtimer.Stop();
                 preptime += debugtimer.ElapsedTicks;
 
@@ -102,7 +103,7 @@ namespace Tesselation
                     {
                         foreach (var potentialanchor in shape.data.tiles)
                         {
-                            //debugtimer.Restart();
+                            debugtimer.Restart();
                             var placedposition = new Point(emptyspace.X - potentialanchor.x, emptyspace.Y - potentialanchor.y);
                             bool canplace = true;
                             for (int i = 0; i < shape.data.tiles.Count; ++i)
@@ -132,11 +133,11 @@ namespace Tesselation
                                 debugtimer.Stop();
                                 boardresettime += debugtimer.ElapsedTicks;
                                 debugtimer.Restart();
-                                int touchingsquares = FindTouchingSquares(shape, placedposition, board);
+                                int touchingsquares = FindTouchingSquares(shape, placedposition, board, finishedsides);
 
                                 if (touchingsquares >= mosttouching && !blacklistedboards.Any(b => b.IsEqual(board)))
                                 {
-                                    if (totalmoves >= 50 || AreaCount(board, width, height) <= 1)
+                                    if (NoNearbyAreas(copy, board) && (totalmoves >= 50 || AreaCount(board, width, height) <= 1))
                                     //Dont split up areas when solving at end
                                     {
                                         if (touchingsquares > mosttouching)
@@ -144,6 +145,10 @@ namespace Tesselation
                                             potentialmoves.Clear(); //Remove moves we aren't going to choose anyway
                                         }
                                         mosttouching = touchingsquares;
+                                        if (touchingsquares >= 5 && totalmoves >= 50) //Dont remove potentially better moves at the end of search
+                                        {
+                                            return new List<MoveData>() {new MoveData(copy, touchingsquares, true, 0)};
+                                        }
                                         potentialmoves.Add(new MoveData(copy, touchingsquares, true, 0));
                                     }
                                 }
@@ -222,6 +227,54 @@ namespace Tesselation
             return potentialmoves;
         }
 
+        private bool ScanSides()
+        {
+            for (int x = 0; x < width; ++x)
+            {
+                if (!board.GetData(x, 0) || !board.GetData(x, height-1))
+                {
+                    return false;
+                }
+            }
+            for (int y = 0; y < height; ++y)
+            {
+                if (!board.GetData(0, y) || !board.GetData(width-1, y))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool NoNearbyAreas(ShapeData copy, Board pieceplaced)
+        {
+            bool[] visitedsquares = new bool[width*height];
+            foreach (var tile in copy.tiles)
+            {
+                int rightcount = 0;
+                int leftcount = 0;
+                int upcount = 0;
+                int downcount = 0;
+                int x = tile.x + copy.location.X;
+                int y = tile.y + copy.location.Y;
+
+                DFS(pieceplaced, x + 1, y, width, height, visitedsquares, ref rightcount, 3);
+                DFS(pieceplaced, x - 1, y, width, height, visitedsquares, ref leftcount, 3);
+                DFS(pieceplaced, x, y + 1, width, height, visitedsquares, ref upcount, 3);
+                DFS(pieceplaced, x, y - 1, width, height, visitedsquares, ref downcount, 3);
+
+                visitedsquares[x + y * width] = false;
+                if ((rightcount <= 3 && rightcount != 0) ||
+                    (leftcount <= 3 && leftcount != 0) ||
+                    (upcount <= 3 && upcount != 0) ||
+                    (downcount <= 3 && downcount != 0))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         private List<Point> FindSideAreas(List<Shape> placedshapes, Board board)
         {
             List<Point> result = new List<Point>();
@@ -249,7 +302,7 @@ namespace Tesselation
             return result;
         }
 
-        private int FindTouchingSquares(Shape copy, Point position, Board b)
+        private int FindTouchingSquares(Shape copy, Point position, Board b, bool finishedsides)
         {
             int result = 0;
             foreach (var point in copy.data.touchingsquares)
@@ -262,7 +315,7 @@ namespace Tesselation
                     result += persquareresard*2;
                     persquareresard += 2;
                 }
-                else if (board.GetData(x, y))
+                else if (board.GetData(x, y) && finishedsides)
                 {
                     result += persquareresard;
                     persquareresard += 2;
@@ -364,7 +417,7 @@ namespace Tesselation
         }
         static void DFS(Board board, int startX, int startY, int width, int height, bool[] visited, ref int result, int distancelimit = int.MaxValue)
         {
-            if (visited[startX + startY * width])
+            if (startX >= width || startX <= -1 || startY >= height || startY <= -1 || visited[startX + startY * width])
             {
                 return;
             }
@@ -377,12 +430,11 @@ namespace Tesselation
                 int x = current.X;
                 int y = current.Y;
 
-                if (x < 0 || x >= width || y < 0 || y >= height || visited[x + y * width] || board.GetData(x, y) == true ||
+                if (x < 0 || x >= width || y < 0 || y >= height || visited[x + y * width] || (board.GetData(x, y)) ||
                     Math.Abs(startX - x) >= distancelimit || Math.Abs(startY - y) >= distancelimit)
                 {
                     continue;
                 }
-
                 visited[x + y * width] = true;
                 ++result;
 

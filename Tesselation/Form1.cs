@@ -68,15 +68,14 @@ namespace Tesselation
         {
             squaresize = Math.Min((menusplit.Panel1.Width - (leftoffset + rightoffset)) / (float)horizontalsquares, (Height - heightoffset) / (float)verticalsquares);
             canvasdata = new Bitmap(canvas.Width, canvas.Height);
-            var g = Graphics.FromImage(canvasdata);
+            bitmapgraphics = Graphics.FromImage(canvasdata);
             for (int x = 0; x < horizontalsquares; ++x)
             {
                 for (int y = 0; y < verticalsquares; ++y)
                 {
-                    g.DrawRectangle(new Pen(Color.Black, 1), x * squaresize + leftoffset, y * squaresize + topoffset, squaresize, squaresize);
+                    bitmapgraphics.DrawRectangle(new Pen(Color.Black, 1), x * squaresize + leftoffset, y * squaresize + topoffset, squaresize, squaresize);
                 }
             }
-            g.Dispose();
         }
 
         System.Timers.Timer AIAsyncMove = new System.Timers.Timer(1);
@@ -97,22 +96,22 @@ namespace Tesselation
             while (true)
             {
                 ++iterations;
+                File.AppendAllLines(dumpfile, ["Start movegen"]);
                 movegentimer.Restart();
                 var moves = mapFiller.GenerateMoves();
                 movegentimer.Stop();
                 movegentime = movegentimer.ElapsedTicks;
+                File.AppendAllLines(dumpfile, ["End movegen"]);
+
                 if (!(moves is null))
                 {
                     if (moves.Count == 1 && !moves[0].isplacing)
                     {
+                        File.AppendAllLines(dumpfile, ["Backtrace: " + iterations]);
                         Shape lookfor = placedshapes.FirstOrDefault(s => s.data.location.X == moves[0].shape.location.X &&
                                                              s.data.location.Y == moves[0].shape.location.Y);
                         new Thread(() => UpdateBitmap(new PlacingData(new Shape(moves[0].shape), false))).Start();
-                        bool taken = false;
-                        do
-                        {
-                            taken = placedshapes.TryTake(out lookfor);
-                        } while (!taken);
+                        placedshapes.TryTake(out lookfor);
 
                         foreach (var tile in moves[0].shape.tiles)
                         {
@@ -123,6 +122,7 @@ namespace Tesselation
                     }
                     else
                     {
+                        File.AppendAllLines(dumpfile, ["Place: " + iterations]);
                         var bestmove = moves[r.Next(0,moves.Count)];
                         placedshapes.Add(new Shape(bestmove.shape));
                         new Thread(() => UpdateBitmap(new PlacingData(new Shape(bestmove.shape), true))).Start();
@@ -136,10 +136,11 @@ namespace Tesselation
                     }
                 }
 
-                const int rendermiliseconds = 0;
+                const int rendermiliseconds = 50;
                 movesperrender++;
                 if (s.ElapsedMilliseconds > rendermiliseconds)
                 {
+                    File.AppendAllLines(dumpfile, ["Render"]);
                     totalmiliseconds += s.ElapsedMilliseconds;
                     s.Stop();
                     UpdateAILabel((int)s.ElapsedMilliseconds, movesperrender);
@@ -239,6 +240,7 @@ namespace Tesselation
                 this.placing = placing;
             }
         }
+        Graphics bitmapgraphics;
         public void UpdateBitmap(PlacingData data)
         {
             if (isupdatingbitmap) 
@@ -250,7 +252,6 @@ namespace Tesselation
             while (drawingbitmap) { } //Wait for image read threads
             var shape = data.shape;
             var placing = data.placing;
-            Graphics g = Graphics.FromImage(canvasdata);
             
             List<PointF> points = new List<PointF>();
             foreach (var tile in shape.data.tiles)
@@ -309,12 +310,12 @@ namespace Tesselation
                 }
                 if (placing) 
                 {
-                    g.FillRectangle(new Pen(drawcolor).Brush, (shape.data.location.X + tile.x) * squaresize + leftoffset, (shape.data.location.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
+                    bitmapgraphics.FillRectangle(new Pen(drawcolor).Brush, (shape.data.location.X + tile.x) * squaresize + leftoffset, (shape.data.location.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
                 }
                 else
                 {
-                    g.FillRectangle(new Pen(Color.White).Brush, (shape.data.location.X + tile.x) * squaresize + leftoffset, (shape.data.location.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
-                    g.DrawRectangle(new Pen(Color.Black), (shape.data.location.X + tile.x) * squaresize + leftoffset, (shape.data.location.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
+                    bitmapgraphics.FillRectangle(new Pen(Color.White).Brush, (shape.data.location.X + tile.x) * squaresize + leftoffset, (shape.data.location.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
+                    bitmapgraphics.DrawRectangle(new Pen(Color.Black), (shape.data.location.X + tile.x) * squaresize + leftoffset, (shape.data.location.Y + tile.y) * squaresize + topoffset, squaresize, squaresize);
                 }
             }
             points = points.Distinct().ToList();
@@ -326,7 +327,7 @@ namespace Tesselation
                 points[i] = new PointF(newx, newy);
                 //e.Graphics.FillEllipse(new Pen(Color.Purple).Brush, new Rectangle(newx-4, newy-4, 8, 8));
             }
-            g.DrawPolygon(new Pen(Color.Black, 1), points.ToArray());
+            bitmapgraphics.DrawPolygon(new Pen(Color.Black, 1), points.ToArray());
             isupdatingbitmap = false;
             if (queue.Count >= 1)
             {
@@ -344,8 +345,8 @@ namespace Tesselation
             drawingbitmap = false;
             if (totaltime >= 1)
             {
-                var cache = totaltime;
-                new Thread(() => MessageBox.Show(string.Format("Completed board size of [{0},{1}] in {2} miliseconds", horizontalsquares, verticalsquares, cache))).Start();
+                var cache = totaltime/1000f;
+                new Thread(() => MessageBox.Show(string.Format("Completed board size of [{0},{1}] in {2} seconds", horizontalsquares, verticalsquares, cache))).Start();
                 totaltime = 0;
             }
             renderstopwatch.Stop();
