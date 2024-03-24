@@ -28,8 +28,8 @@ namespace Tesselation
     }
     public struct ShapeData
     {
-        public List<Point> touchingsquares = new List<Point>();
-        public List<Tile> tiles;
+        public Point[] touchingsquares;
+        public Tile[] tiles;
         public int width;
         public int height;
         public Point location;
@@ -37,7 +37,6 @@ namespace Tesselation
 
         public ShapeData(int width, int height, Point location)
         {
-            this.tiles = new List<Tile>();
             this.width = width;
             this.height = height;
             this.location = location;
@@ -71,15 +70,16 @@ namespace Tesselation
             {
                 rotations.Add(Rotate(i * 90));
             }
-            data.touchingsquares = data.touchingsquares.Distinct().ToList();
-            data.touchingsquares.RemoveAll(t => data.tiles.Any(tile => tile.x == t.X && tile.y == t.Y));
+            data.touchingsquares = data.touchingsquares.Distinct().Where(t => !data.tiles.Any(tile=> tile.x == t.X && tile.y == t.Y)).ToArray();
         }
 
         public void GenerateShape(int tilecount)
         {
-            data.tiles.Add(new Tile(0, 0));
+            List<Point> touchingsquares = new List<Point>();
+            data.tiles = new Tile[tilecount];
+            data.tiles[0] = new Tile(0, 0);
 
-            AddSideTiles(0,0);
+            AddSideTiles(0,0, touchingsquares);
 
             for (int i = 1; i < tilecount; ++i)
             {
@@ -120,20 +120,20 @@ namespace Tesselation
                 switch (nextsquare)
                 {
                     case Direction.Up:
-                        data.tiles.Add(new Tile(starttile.x, starttile.y - 1));
-                        AddSideTiles(starttile.x, starttile.y - 1);
+                        data.tiles[i] = (new Tile(starttile.x, starttile.y - 1));
+                        AddSideTiles(starttile.x, starttile.y - 1, touchingsquares);
                         break;
                     case Direction.Right:
-                        data.tiles.Add(new Tile(starttile.x + 1, starttile.y));
-                        AddSideTiles(starttile.x + 1, starttile.y);
+                        data.tiles[i] = (new Tile(starttile.x + 1, starttile.y));
+                        AddSideTiles(starttile.x + 1, starttile.y, touchingsquares);
                         break;
                     case Direction.Down:
-                        data.tiles.Add(new Tile(starttile.x, starttile.y + 1));
-                        AddSideTiles(starttile.x, starttile.y + 1);
+                        data.tiles[i] = (new Tile(starttile.x, starttile.y + 1));
+                        AddSideTiles(starttile.x, starttile.y + 1, touchingsquares);
                         break;
                     case Direction.Left:
-                        data.tiles.Add(new Tile(starttile.x - 1, starttile.y));
-                        AddSideTiles(starttile.x - 1, starttile.y);
+                        data.tiles[i] = (new Tile(starttile.x - 1, starttile.y));
+                        AddSideTiles(starttile.x - 1, starttile.y, touchingsquares);
                         break;
 
                 }
@@ -144,16 +144,15 @@ namespace Tesselation
             {
                 rotations.Add(Rotate(i * 90));
             }
-            data.touchingsquares = data.touchingsquares.Distinct().ToList();
-            data.touchingsquares.RemoveAll(t => data.tiles.Any(tile => tile.x == t.X && tile.y == t.Y));
+            data.touchingsquares = touchingsquares.Distinct().Where(t => !data.tiles.Any(tile => tile.x == t.X && tile.y == t.Y)).ToArray();
         }
 
-        private void AddSideTiles(int x, int y)
+        private void AddSideTiles(int x, int y, List<Point> touchingsquares)
         {
-            data.touchingsquares.Add(new Point(x-1, y));
-            data.touchingsquares.Add(new Point(x, y-1));
-            data.touchingsquares.Add(new Point(x+1, y));
-            data.touchingsquares.Add(new Point(x, y+1));
+            touchingsquares.Add(new Point(x-1, y));
+            touchingsquares.Add(new Point(x, y-1));
+            touchingsquares.Add(new Point(x+1, y));
+            touchingsquares.Add(new Point(x, y+1));
         }
 
         public List<Shape> rotations = new List<Shape>();
@@ -164,20 +163,18 @@ namespace Tesselation
             int lowestx = data.tiles.OrderBy(t => t.x).First().x;
             int lowesty = data.tiles.OrderBy(t => t.y).First().y;
 
-            for (int i = 0; i < data.tiles.Count; ++i)
+            for (int i = 0; i < data.tiles.Length; ++i)
             {
                 data.tiles[i] = new Tile(data.tiles[i].x - lowestx, data.tiles[i].y - lowesty);
-
             }
         }
 
         internal Shape Place(Point placingtile)
         {
             Shape duplicate = new Shape(data.width, data.height);
-            foreach (var tile in data.tiles)
-            {
-                duplicate.data.tiles.Add(new Tile(tile.x, tile.y));
-            }
+            duplicate.data.tiles = new Tile[data.tiles.Length];
+            data.tiles.CopyTo(duplicate.data.tiles, 0);
+
             duplicate.data.color = this.data.color;
             duplicate.data.location = placingtile;
             return duplicate;
@@ -185,14 +182,12 @@ namespace Tesselation
         internal ShapeData PlaceData(Point placingtile)
         {
             ShapeData duplicate = new ShapeData(data.width, data.height, placingtile);
-            foreach (var tile in data.tiles)
-            {
-                duplicate.tiles.Add(new Tile(tile.x, tile.y));
-            }
-            foreach (var tile in data.touchingsquares)
-            {
-                duplicate.touchingsquares.Add(new Point(tile.X, tile.Y));
-            }
+            duplicate.tiles = new Tile[data.tiles.Length];
+            data.tiles.CopyTo(duplicate.tiles, 0);
+
+            duplicate.touchingsquares = new Point[data.touchingsquares.Length];
+            data.touchingsquares.CopyTo(duplicate.touchingsquares, 0);
+
             duplicate.color = data.color;
             return duplicate;
         }
@@ -203,17 +198,17 @@ namespace Tesselation
             {
                 return false;
             }
-            if (a.data.tiles.Count == b.data.tiles.Count)
+            if (a.data.tiles.Length == b.data.tiles.Length)
             {
                 int duplicatetiles = 0;
-                for (int i = 0; i < a.data.tiles.Count; ++i)
+                for (int i = 0; i < a.data.tiles.Length; ++i)
                 {
                     if (b.data.tiles.Any(t=>t.x == a.data.tiles[i].x && t.y == a.data.tiles[i].y))
                     {
                         ++duplicatetiles;
                     }
                 }
-                if (duplicatetiles == a.data.tiles.Count)
+                if (duplicatetiles == a.data.tiles.Length)
                 {
                     return true;
                 }
@@ -227,19 +222,22 @@ namespace Tesselation
         public Shape Rotate(int degrees)
         {
             Shape copy = new Shape(data.width, data.height);
-            foreach (var tile in data.tiles)
+            copy.data.tiles = new Tile[data.tiles.Length];
+            for (int i = 0; i < data.tiles.Length; i++)
             {
+                Tile tile = data.tiles[i];
                 Point newlocation = RotatePoint(new Point(tile.x, tile.y), new Point((data.width -1)/2, (data.height -1)/2), degrees);
-                copy.data.tiles.Add(new Tile(newlocation.X, newlocation.Y));
+                copy.data.tiles[i] = (new Tile(newlocation.X, newlocation.Y));
             }
             copy.LeftCornerAdjust();
+            List<Point> touchingsquares = new List<Point>();
             foreach (var tile in copy.data.tiles)
             {
-                copy.AddSideTiles(tile.x, tile.y);
+                copy.AddSideTiles(tile.x, tile.y, touchingsquares);
             }
+            copy.data.touchingsquares = touchingsquares.ToArray();
 
-            copy.data.touchingsquares = copy.data.touchingsquares.Distinct().ToList();
-            copy.data.touchingsquares.RemoveAll(t => copy.data.tiles.Any(tile => tile.x == t.X && tile.y == t.Y));
+            data.touchingsquares = touchingsquares.Distinct().Where(t => !data.tiles.Any(tile => tile.x == t.X && tile.y == t.Y)).ToArray();
 
             copy.data.color = data.color;
             return copy;

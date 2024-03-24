@@ -313,7 +313,7 @@ namespace Tesselation
                     }
                 }
                 points = points.Distinct().ToList();
-                points = OrderPoints(points, shape.data.tiles);
+                points = OrderPoints(points, shape.data.tiles.ToList());
                 for (int i = 0; i < points.Count(); ++i)
                 {
                     float newx = (points[i].X + shape.data.location.X) * squaresize + leftoffset;
