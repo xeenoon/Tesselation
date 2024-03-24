@@ -96,18 +96,15 @@ namespace Tesselation
             while (true)
             {
                 ++iterations;
-                File.AppendAllLines(dumpfile, ["Start movegen"]);
                 movegentimer.Restart();
                 var moves = mapFiller.GenerateMoves();
                 movegentimer.Stop();
                 movegentime = movegentimer.ElapsedTicks;
-                File.AppendAllLines(dumpfile, ["End movegen"]);
 
                 if (!(moves is null))
                 {
                     if (moves.Count == 1 && !moves[0].isplacing)
                     {
-                        File.AppendAllLines(dumpfile, ["Backtrace: " + iterations]);
                         Shape lookfor = placedshapes.FirstOrDefault(s => s.data.location.X == moves[0].shape.location.X &&
                                                              s.data.location.Y == moves[0].shape.location.Y);
                         new Thread(() => UpdateBitmap(new PlacingData(new Shape(moves[0].shape), false))).Start();
@@ -122,7 +119,6 @@ namespace Tesselation
                     }
                     else
                     {
-                        File.AppendAllLines(dumpfile, ["Place: " + iterations]);
                         var bestmove = moves[r.Next(0,moves.Count)];
                         placedshapes.Add(new Shape(bestmove.shape));
                         new Thread(() => UpdateBitmap(new PlacingData(new Shape(bestmove.shape), true))).Start();
@@ -140,7 +136,6 @@ namespace Tesselation
                 movesperrender++;
                 if (s.ElapsedMilliseconds > rendermiliseconds)
                 {
-                    File.AppendAllLines(dumpfile, ["Render"]);
                     totalmiliseconds += s.ElapsedMilliseconds;
                     s.Stop();
                     UpdateAILabel((int)s.ElapsedMilliseconds, movesperrender);
@@ -213,11 +208,11 @@ namespace Tesselation
 
                 label1.Text = $"Totaltime:{milis}\nboardresettime:{boardresettimems}\nblacklisttesttime:{blacklisttestms}\ncanplacetime:{canplacems}\npreptime:{preptimems}\nwraptime:{wraptimems}\nlosttime:{movegenms - (canplacems+blacklisttestms+boardresettimems + preptimems + wraptimems)}";
                 label1.Refresh();
-                mapFiller.boardresettime = 0;
+                /*mapFiller.boardresettime = 0;
                 mapFiller.blacklisttesttime = 0;
                 mapFiller.canplacetime = 0;
                 mapFiller.preptime = 0;
-                mapFiller.wraptime = 0;
+                mapFiller.wraptime = 0;*/
             }
         }
 

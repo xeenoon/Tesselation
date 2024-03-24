@@ -71,7 +71,7 @@ namespace Tesselation
 
         public List<MoveData> GenerateMoves()
         {
-           debugtimer.Restart();
+            debugtimer.Restart();
 
             var precalcmoves = visitedboards.FirstOrDefault(bm => bm.board.IsEqual(board));
             if (!(precalcmoves is null))
@@ -89,7 +89,7 @@ namespace Tesselation
             Board boardcopy = new Board(width, height);
 
             bool cansum = CanSumToTarget(potentialshapes.Select(s => s.data.tiles.Count).Distinct().ToArray(), totalmoves);
-            int mosttouching = 0;
+            int mosttouching = 2;
             if (reducedmoves.Count() >= 1 && ((totalmoves > 50) || cansum) && areacount <= 1)
             {
                 //check if a possible combination could theoretically exist
@@ -145,7 +145,7 @@ namespace Tesselation
                                             potentialmoves.Clear(); //Remove moves we aren't going to choose anyway
                                         }
                                         mosttouching = touchingsquares;
-                                        if (touchingsquares >= 5 && totalmoves >= 50) //Dont remove potentially better moves at the end of search
+                                        if (touchingsquares >= 6 && totalmoves >= 50) //Dont remove potentially better moves at the end of search
                                         {
                                             return new List<MoveData>() {new MoveData(copy, touchingsquares, true, 0)};
                                         }
@@ -278,7 +278,9 @@ namespace Tesselation
         private List<Point> FindSideAreas(List<Shape> placedshapes, Board board)
         {
             List<Point> result = new List<Point>();
+            List<int> count = new List<int>();
             List<Point> toiterate = placedshapes.SelectMany(s=>s.data.touchingsquares.Select(ts=>new Point(ts.X + s.data.location.X, ts.Y + s.data.location.Y))).ToList();
+
             //Add side of board
             for (int i = 0; i < board.width; ++i)
             {
@@ -295,11 +297,21 @@ namespace Tesselation
                 if ((tile.X < 0 && tile.Y < 0 && tile.X >= width && tile.Y >= height) ||
                     !board.GetData(tile.X, tile.Y))
                 {
-                    result.Add(new Point(tile.X, tile.Y));
+                    var point = new Point(tile.X, tile.Y);
+                    var existing = result.IndexOf(point);
+                    if (existing == -1)
+                    {
+                        result.Add(point);
+                        count.Add(1);
+                    }
+                    else
+                    {
+                        count[existing]++;
+                    }
 
                 }
             }
-            return result;
+            return result;//.OrderByDescending(point=>count[result.IndexOf(point)]).ToList();
         }
 
         private int FindTouchingSquares(Shape copy, Point position, Board b, bool finishedsides)
