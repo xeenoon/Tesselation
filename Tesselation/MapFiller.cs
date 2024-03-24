@@ -197,7 +197,7 @@ namespace Tesselation
                                             potentialmoves.Clear(); //Remove moves we aren't going to choose anyway
                                         }
                                         mosttouching = touchingsquares;
-                                        if (touchingsquares >= 5 && totalmoves >= 50) //Dont remove potentially better moves at the end of search
+                                        if (touchingsquares >= 6 && totalmoves >= 50) //Dont remove potentially better moves at the end of search
                                         {
                                             return new List<MoveData>() {new MoveData(copy, touchingsquares, true, 0)};
                                         }

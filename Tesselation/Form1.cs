@@ -53,10 +53,10 @@ namespace Tesselation
                         shape = new Shape(x + 4, shapesize, shapesize);
                     } while (tilePlacers.Select(t => t.shape).Any(s => shape.rotations.Any(rs => rs == s)));
 
-                    int rectx = 20 + x * 160;
-                    int recty = 20 + y * 160;
+                    int rectx = 20 + x * (Height / 6 + 10);
+                    int recty = 20 + y * (Height / 6 + 10);
 
-                    tilePlacers.Add(new TilePlacer(shape, new Rectangle(rectx, recty, 150, 150)));
+                    tilePlacers.Add(new TilePlacer(shape, new Rectangle(rectx, recty, Height / 6, Height / 6)));
                 }
             }
             InitializeBoard();
