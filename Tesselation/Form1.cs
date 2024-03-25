@@ -33,8 +33,8 @@ namespace Tesselation
         {
             File.WriteAllText(dumpfile, "");
             instance = this;
-            this.FormBorderStyle = FormBorderStyle.None;
-            this.WindowState = FormWindowState.Maximized;
+            //this.FormBorderStyle = FormBorderStyle.None;
+            //this.WindowState = FormWindowState.Maximized;
 
             InitializeComponent();
             menusplit = splitContainer1;

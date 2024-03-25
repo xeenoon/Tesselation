@@ -148,7 +148,6 @@ namespace Tesselation
                 List<Shape> shaperotations = potentialshapes.Shuffle().SelectMany(s => s.rotations).ToList();
                 debugtimer.Stop();
                 preptime += debugtimer.ElapsedTicks;
-
                 foreach (var shape in shaperotations)
                 {
                     foreach (var emptyspace in emptysidetiles)
@@ -157,21 +156,8 @@ namespace Tesselation
                         {
                             debugtimer.Restart();
                             var placedposition = new Point(emptyspace.X - potentialanchor.x, emptyspace.Y - potentialanchor.y);
-                            bool canplace = true;
-                            for (int i = 0; i < shape.data.tiles.Count; ++i)
-                            {
-                                var tile = shape.data.tiles[i];
-                                int newx = tile.x + placedposition.X;
-                                int newy = tile.y + placedposition.Y;
-                                if (newx >= width || newy >= height || newx <= -1 || newy <= -1 || board.GetData(newx, newy))
-                                {
-                                    canplace = false;
-
-                                    debugtimer.Stop();
-                                    canplacetime += debugtimer.ElapsedTicks;
-                                    break;
-                                }
-                            }
+                            ByteBlock binaryshapedata = new ByteBlock(width, height, shape.data.tiles, placedposition);
+                            bool canplace = binaryshapedata.ScanPlacement(board);
 
                             debugtimer.Stop();
                             canplacetime += debugtimer.ElapsedTicks;
@@ -181,11 +167,8 @@ namespace Tesselation
                                 //place the piece
                                 debugtimer.Restart();
                                 var copy = shape.PlaceData(placedposition);
-                                //var tempcopy = new Board(board);
-                                foreach (var tile in copy.tiles)
-                                {
-                                    board.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
-                                }
+                                binaryshapedata.FlipTileBits(board);
+
                                 debugtimer.Stop();
                                 boardresettime += debugtimer.ElapsedTicks;
                                 debugtimer.Restart();
@@ -213,11 +196,7 @@ namespace Tesselation
                                 blacklisttesttime += debugtimer.ElapsedTicks;
 
                                 debugtimer.Restart();
-                                foreach (var tile in copy.tiles)
-                                {
-                                    board.ClearBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
-                                }
-
+                                binaryshapedata.FlipTileBits(board);
                                 debugtimer.Stop();
                                 boardresettime += debugtimer.ElapsedTicks;
                             }

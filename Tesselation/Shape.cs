@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -41,6 +42,67 @@ namespace Tesselation
             this.width = width;
             this.height = height;
             this.location = location;
+        }
+    }
+    public struct ByteBlock
+    {
+        public List<int> byteidxs = new List<int>();
+        public List<byte> datas = new List<byte>();
+        bool invalid;
+        public ByteBlock(int width, int height, List<Tile> tiles, Point location)
+        {
+            foreach (var tile in tiles)
+            {
+                int finalx = tile.x + location.X;
+                int finaly = tile.y + location.Y;
+
+                if (finalx <= -1 || finaly <= -1 || finalx >= width || finaly >= height)
+                {
+                    invalid = true;
+                    return;
+                }
+
+                int finalidx = (finalx + finaly*width)/8;
+                int listidx = byteidxs.IndexOf(finalidx);
+
+                int bitpos = finalx % 8;
+                if (listidx == -1)
+                {
+                    datas.Add((byte)(1 << bitpos));
+                    byteidxs.Add(finalidx);
+                }
+                else
+                {
+                    datas[listidx] |= (byte)(1 << bitpos);
+                }
+            }
+        }
+        public unsafe bool ScanPlacement(Board b)
+        {
+            if (invalid)
+            {
+                return false;
+            }
+            for (int i = 0; i < datas.Count; ++i)
+            {
+                var empty = b.data[byteidxs[i]] & datas[i];
+                if (empty != 0)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        public unsafe void FlipTileBits(Board b)
+        {
+            if (invalid)
+            {
+                return;
+            }
+            for (int i = 0; i < datas.Count; ++i)
+            {
+                b.data[byteidxs[i]] ^= datas[i];
+            }
         }
     }
     public class Shape
