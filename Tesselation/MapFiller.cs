@@ -151,18 +151,18 @@ namespace Tesselation
 
                 foreach (var shape in shaperotations)
                 {
-                    foreach (var emptyspace in emptysidetiles)
+                    debugtimer.Restart();
+                    foreach (var emptyspace in emptysidetiles.SelectMany(emptytile => shape.data.tiles.Select(t=> new Point(emptytile.X- t.x, emptytile.Y - t.y))))
                     {
-                        foreach (var potentialanchor in shape.data.tiles)
-                        {
-                            debugtimer.Restart();
-                            var placedposition = new Point(emptyspace.X - potentialanchor.x, emptyspace.Y - potentialanchor.y);
+                        //foreach (var potentialanchor in shape.data.tiles)
+                        //{
+                            //var placedposition = new Point(emptyspace.X - potentialanchor.x, emptyspace.Y - potentialanchor.y);
                             bool canplace = true;
                             for (int i = 0; i < shape.data.tiles.Count; ++i)
                             {
                                 var tile = shape.data.tiles[i];
-                                int newx = tile.x + placedposition.X;
-                                int newy = tile.y + placedposition.Y;
+                                int newx = tile.x + emptyspace.X;
+                                int newy = tile.y + emptyspace.Y;
                                 if (newx >= width || newy >= height || newx <= -1 || newy <= -1 || board.GetData(newx, newy))
                                 {
                                     canplace = false;
@@ -180,16 +180,16 @@ namespace Tesselation
                             {
                                 //place the piece
                                 debugtimer.Restart();
-                                var copy = shape.PlaceData(placedposition);
+                                var copy = shape.PlaceData(emptyspace);
                                 //var tempcopy = new Board(board);
                                 foreach (var tile in copy.tiles)
                                 {
-                                    board.SetBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
+                                    board.SetBit(tile.x + emptyspace.X, (tile.y + emptyspace.Y));
                                 }
                                 debugtimer.Stop();
                                 boardresettime += debugtimer.ElapsedTicks;
                                 debugtimer.Restart();
-                                int touchingsquares = FindTouchingSquares(shape, placedposition, board, finishedsides);
+                                int touchingsquares = FindTouchingSquares(shape, emptyspace, board, finishedsides);
 
                                 if (touchingsquares >= mosttouching && !blacklistedboards.Any(b => b.IsEqual(board)))
                                 {
@@ -215,12 +215,12 @@ namespace Tesselation
                                 debugtimer.Restart();
                                 foreach (var tile in copy.tiles)
                                 {
-                                    board.ClearBit(tile.x + placedposition.X, (tile.y + placedposition.Y));
+                                    board.ClearBit(tile.x + emptyspace.X, (tile.y + emptyspace.Y));
                                 }
 
                                 debugtimer.Stop();
                                 boardresettime += debugtimer.ElapsedTicks;
-                            }
+                            //}
                         }
                     }
                 }

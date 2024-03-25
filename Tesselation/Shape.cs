@@ -48,8 +48,10 @@ namespace Tesselation
         public ShapeData data;
 
         public Color[] potentialcolors = [Color.Orange, Color.Yellow, Color.LightCoral, 
-                                        Color.Blue, Color.Purple, Color.Green, Color.DeepPink, 
-                                        Color.RebeccaPurple, Color.YellowGreen, Color.Wheat, Color.Gray, Color.Gold, Color.OrangeRed];
+                                          Color.Blue, Color.Purple, Color.Green, Color.DeepPink, 
+                                          Color.RebeccaPurple, Color.YellowGreen, Color.Wheat, 
+                                          Color.Gray, Color.Gold, Color.OrangeRed,
+                                          Color.DarkGray, Color.LightGray, Color.LightGreen, Color.RoyalBlue];
         Random r = new Random();
 
         public Shape(int tilecount, int width, int height)
