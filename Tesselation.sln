@@ -5,7 +5,9 @@ VisualStudioVersion = 17.8.34309.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tesselation", "Tesselation\Tesselation.csproj", "{45AEDB22-1141-45CD-A5F9-FA1A2993CE22}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleTester", "ConsoleTester\ConsoleTester.csproj", "{5DE0FA9C-1542-4276-96E0-B7804A0B1440}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleTester", "ConsoleTester\ConsoleTester.csproj", "{5DE0FA9C-1542-4276-96E0-B7804A0B1440}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerBackend", "ServerBackend\ServerBackend.csproj", "{DD62E7F0-9358-492A-965D-D389E7E1A3AA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{5DE0FA9C-1542-4276-96E0-B7804A0B1440}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5DE0FA9C-1542-4276-96E0-B7804A0B1440}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5DE0FA9C-1542-4276-96E0-B7804A0B1440}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD62E7F0-9358-492A-965D-D389E7E1A3AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD62E7F0-9358-492A-965D-D389E7E1A3AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD62E7F0-9358-492A-965D-D389E7E1A3AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD62E7F0-9358-492A-965D-D389E7E1A3AA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -57,7 +57,7 @@
             canvas.Dock = DockStyle.Fill;
             canvas.Location = new Point(0, 0);
             canvas.Name = "canvas";
-            canvas.Size = new Size(917, 717);
+            canvas.Size = new Size(916, 637);
             canvas.TabIndex = 0;
             canvas.TabStop = false;
             canvas.Click += canvas_Click;
@@ -82,8 +82,8 @@
             splitContainer1.Panel2.Controls.Add(pictureBox2);
             splitContainer1.Panel2.Controls.Add(pictureBox1);
             splitContainer1.Panel2.Paint += splitContainer1_Panel2_Paint;
-            splitContainer1.Size = new Size(1209, 717);
-            splitContainer1.SplitterDistance = 917;
+            splitContainer1.Size = new Size(1209, 637);
+            splitContainer1.SplitterDistance = 916;
             splitContainer1.TabIndex = 1;
             splitContainer1.KeyPress += MainForm_KeyPress;
             // 
@@ -97,7 +97,7 @@
             panel1.Controls.Add(textBox2);
             panel1.Controls.Add(textBox1);
             panel1.Controls.Add(label2);
-            panel1.Location = new Point(105, 609);
+            panel1.Location = new Point(105, 529);
             panel1.Name = "panel1";
             panel1.Size = new Size(183, 108);
             panel1.TabIndex = 1;
@@ -157,7 +157,7 @@
             // 
             label1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             label1.AutoSize = true;
-            label1.Location = new Point(2, 610);
+            label1.Location = new Point(2, 530);
             label1.Name = "label1";
             label1.Size = new Size(121, 75);
             label1.TabIndex = 2;
@@ -193,7 +193,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1209, 717);
+            ClientSize = new Size(1209, 637);
             Controls.Add(splitContainer1);
             Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "MainForm";
